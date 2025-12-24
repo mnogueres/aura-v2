@@ -80,13 +80,46 @@ Estado: ✅ COMPLETADA
 
 ---
 
-## FASE 14 — Frontend
+## FASE 14 — Projections / Read Models
 
-Estado: ⏳ PENDIENTE
+Estado: ✅ COMPLETADA
+
+### 14.1 — Patient Timeline
+Estado: ✅ COMPLETADA
+- Timeline cronológico de eventos por paciente
+- Read model derivado de eventos CRM y Billing
+- Tests incluidos (12/12 pasando)
+
+### 14.2 — Patient Summary
+Estado: ✅ COMPLETADA
+- Contadores y totales agregados por paciente
+- Campos: invoices_count, payments_count, total_invoiced, total_paid
+- Actualización incremental (increment/decrement)
+- Tests incluidos (9/9 pasando)
+
+### 14.3 — Billing Timeline
+Estado: ✅ COMPLETADA
+- Timeline financiero con montos y referencias
+- Eventos de invoices y payments
+- Tests incluidos (8/8 pasando)
+
+### 14.4 — Audit Trail (Platform)
+Estado: ✅ COMPLETADA
+- Audit técnico para eventos de plataforma
+- Category y severity por tipo de evento
+- Actor detection (system/user)
+- Tests incluidos (14/14 pasando)
+
+---
+
+## FASE 15 — Workspace (Read-only)
+
+Estado: ⏳ NEXT
 Ideas:
-- Vistas según aura-rules.md
-- Integración con API v1
-- Layout cápsula desktop / full mobile
+- Endpoint GET /api/v1/workspace para carga rápida
+- Agregar datos de Patient Summary + últimos N eventos
+- Cache inteligente
+- Minimizar queries a dominio
 
 ---
 
