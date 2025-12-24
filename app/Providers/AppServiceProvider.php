@@ -79,14 +79,24 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function registerProjectionListeners(): void
     {
-        $projector = app(\App\Projections\PatientTimelineProjector::class);
+        $timelineProjector = app(\App\Projections\PatientTimelineProjector::class);
+        $summaryProjector = app(\App\Projections\PatientSummaryProjector::class);
 
-        Event::listen(\App\Events\CRM\PatientCreated::class, [$projector, 'handlePatientCreated']);
-        Event::listen(\App\Events\Billing\InvoiceCreated::class, [$projector, 'handleInvoiceCreated']);
-        Event::listen(\App\Events\Billing\InvoiceIssued::class, [$projector, 'handleInvoiceIssued']);
-        Event::listen(\App\Events\Billing\InvoicePaid::class, [$projector, 'handleInvoicePaid']);
-        Event::listen(\App\Events\Billing\PaymentRecorded::class, [$projector, 'handlePaymentRecorded']);
-        Event::listen(\App\Events\Billing\PaymentApplied::class, [$projector, 'handlePaymentApplied']);
-        Event::listen(\App\Events\Billing\PaymentUnlinked::class, [$projector, 'handlePaymentUnlinked']);
+        // Patient Timeline Projection
+        Event::listen(\App\Events\CRM\PatientCreated::class, [$timelineProjector, 'handlePatientCreated']);
+        Event::listen(\App\Events\Billing\InvoiceCreated::class, [$timelineProjector, 'handleInvoiceCreated']);
+        Event::listen(\App\Events\Billing\InvoiceIssued::class, [$timelineProjector, 'handleInvoiceIssued']);
+        Event::listen(\App\Events\Billing\InvoicePaid::class, [$timelineProjector, 'handleInvoicePaid']);
+        Event::listen(\App\Events\Billing\PaymentRecorded::class, [$timelineProjector, 'handlePaymentRecorded']);
+        Event::listen(\App\Events\Billing\PaymentApplied::class, [$timelineProjector, 'handlePaymentApplied']);
+        Event::listen(\App\Events\Billing\PaymentUnlinked::class, [$timelineProjector, 'handlePaymentUnlinked']);
+
+        // Patient Summary Projection
+        Event::listen(\App\Events\CRM\PatientCreated::class, [$summaryProjector, 'handlePatientCreated']);
+        Event::listen(\App\Events\Billing\InvoiceCreated::class, [$summaryProjector, 'handleInvoiceCreated']);
+        Event::listen(\App\Events\Billing\InvoicePaid::class, [$summaryProjector, 'handleInvoicePaid']);
+        Event::listen(\App\Events\Billing\PaymentRecorded::class, [$summaryProjector, 'handlePaymentRecorded']);
+        Event::listen(\App\Events\Billing\PaymentApplied::class, [$summaryProjector, 'handlePaymentApplied']);
+        Event::listen(\App\Events\Billing\PaymentUnlinked::class, [$summaryProjector, 'handlePaymentUnlinked']);
     }
 }
