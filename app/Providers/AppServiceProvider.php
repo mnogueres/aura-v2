@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\ServiceProvider;
@@ -24,7 +25,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            \App\Contracts\OutboxRepositoryInterface::class,
+            \App\Repositories\OutboxRepository::class
+        );
     }
 
     /**
@@ -65,5 +69,24 @@ class AppServiceProvider extends ServiceProvider
                 ],
             ], $status);
         });
+
+        // Register projection listeners
+        $this->registerProjectionListeners();
+    }
+
+    /**
+     * Register event listeners for projections.
+     */
+    protected function registerProjectionListeners(): void
+    {
+        $projector = app(\App\Projections\PatientTimelineProjector::class);
+
+        Event::listen(\App\Events\CRM\PatientCreated::class, [$projector, 'handlePatientCreated']);
+        Event::listen(\App\Events\Billing\InvoiceCreated::class, [$projector, 'handleInvoiceCreated']);
+        Event::listen(\App\Events\Billing\InvoiceIssued::class, [$projector, 'handleInvoiceIssued']);
+        Event::listen(\App\Events\Billing\InvoicePaid::class, [$projector, 'handleInvoicePaid']);
+        Event::listen(\App\Events\Billing\PaymentRecorded::class, [$projector, 'handlePaymentRecorded']);
+        Event::listen(\App\Events\Billing\PaymentApplied::class, [$projector, 'handlePaymentApplied']);
+        Event::listen(\App\Events\Billing\PaymentUnlinked::class, [$projector, 'handlePaymentUnlinked']);
     }
 }

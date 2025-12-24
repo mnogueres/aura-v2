@@ -40,13 +40,53 @@ Opciones:
 
 ---
 
-## FASE 13 — Observabilidad
+## FASE 13 — Event-Driven Architecture
 
-Estado: ⏳ PENDIENTE  
+Estado: ✅ COMPLETADA
+
+### 13.1 — Taxonomía de eventos
+Estado: ✅ COMPLETADA
+- 10 eventos de dominio definidos (CRM, Billing, Platform)
+- Documentación en docs/EVENTS.md
+- Nomenclatura estándar: domain.entity.action
+
+### 13.2 — Event Classes
+Estado: ✅ COMPLETADA
+- Clases de eventos en app/Events/{Domain}
+- Envelope estándar (event, occurred_at, request_id, user_id, clinic_id, payload)
+- ShouldBroadcast implementado
+
+### 13.3 — EventService
+Estado: ✅ COMPLETADA
+- Servicio centralizado para emisión de eventos
+- Emisión post-commit (DB::afterCommit)
+- Metadatos auto-capturados
+- Tests de contrato
+
+### 13.4 — Outbox Pattern
+Estado: ✅ COMPLETADA
+- Tabla outbox_events (pending/processed/failed)
+- Logging transaccional de eventos
+- TTL y auto-limpieza
+- Idempotencia garantizada
+
+### 13.5 — Workers/Consumers
+Estado: ✅ COMPLETADA
+- OutboxEventConsumer service (batch processing)
+- ProcessOutboxEvents job (queue)
+- Command artisan outbox:process
+- Reintentos (max 5) y locking
+- Tests completos (10/10 pasando)
+
+---
+
+## FASE 14 — Frontend
+
+Estado: ⏳ PENDIENTE
 Ideas:
-- Logging estructurado
-- Correlation ID (request_id)
-- Métricas básicas (latencia, errores)
+- Vistas según aura-rules.md
+- Integración con API v1
+- Layout cápsula desktop / full mobile
 
 ---
 
