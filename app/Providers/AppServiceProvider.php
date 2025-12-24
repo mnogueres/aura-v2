@@ -81,6 +81,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $timelineProjector = app(\App\Projections\PatientTimelineProjector::class);
         $summaryProjector = app(\App\Projections\PatientSummaryProjector::class);
+        $billingTimelineProjector = app(\App\Projections\BillingTimelineProjector::class);
 
         // Patient Timeline Projection
         Event::listen(\App\Events\CRM\PatientCreated::class, [$timelineProjector, 'handlePatientCreated']);
@@ -98,5 +99,13 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(\App\Events\Billing\PaymentRecorded::class, [$summaryProjector, 'handlePaymentRecorded']);
         Event::listen(\App\Events\Billing\PaymentApplied::class, [$summaryProjector, 'handlePaymentApplied']);
         Event::listen(\App\Events\Billing\PaymentUnlinked::class, [$summaryProjector, 'handlePaymentUnlinked']);
+
+        // Billing Timeline Projection
+        Event::listen(\App\Events\Billing\InvoiceCreated::class, [$billingTimelineProjector, 'handleInvoiceCreated']);
+        Event::listen(\App\Events\Billing\InvoiceIssued::class, [$billingTimelineProjector, 'handleInvoiceIssued']);
+        Event::listen(\App\Events\Billing\InvoicePaid::class, [$billingTimelineProjector, 'handleInvoicePaid']);
+        Event::listen(\App\Events\Billing\PaymentRecorded::class, [$billingTimelineProjector, 'handlePaymentRecorded']);
+        Event::listen(\App\Events\Billing\PaymentApplied::class, [$billingTimelineProjector, 'handlePaymentApplied']);
+        Event::listen(\App\Events\Billing\PaymentUnlinked::class, [$billingTimelineProjector, 'handlePaymentUnlinked']);
     }
 }
