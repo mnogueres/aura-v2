@@ -1,0 +1,76 @@
+type: object
+description: Payment entity
+properties:
+  id:
+    type: integer
+    description: Payment ID (auto-generated)
+    readOnly: true
+    example: 1
+  amount:
+    type: number
+    format: float
+    description: Payment amount
+    example: 50.00
+  payment_date:
+    type: string
+    format: date
+    description: Date when payment was made
+    example: "2025-12-24"
+  payment_method:
+    type: string
+    description: Method used for payment
+    enum:
+      - cash
+      - card
+      - transfer
+      - other
+    example: cash
+  notes:
+    type: string
+    description: Additional notes about the payment
+    nullable: true
+    example: "Partial payment for invoice INV-001-25"
+  patient:
+    type: object
+    description: Associated patient (summary)
+    properties:
+      id:
+        type: integer
+        example: 1
+      first_name:
+        type: string
+        example: Ana
+      last_name:
+        type: string
+        example: García
+    required:
+      - id
+      - first_name
+      - last_name
+  invoice:
+    type: object
+    description: Associated invoice (summary)
+    nullable: true
+    properties:
+      id:
+        type: integer
+        example: 1
+      invoice_number:
+        type: string
+        example: "INV-001-25"
+    required:
+      - id
+      - invoice_number
+  created_at:
+    type: string
+    format: date-time
+    description: Record creation timestamp
+    readOnly: true
+    example: "2025-12-24T10:00:00.000000Z"
+required:
+  - id
+  - amount
+  - payment_date
+  - payment_method
+  - patient
+  - created_at

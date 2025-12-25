@@ -1,0 +1,47 @@
+type: object
+description: Request body for creating a payment
+properties:
+  clinic_id:
+    type: integer
+    description: Clinic ID (must exist)
+    example: 1
+  patient_id:
+    type: integer
+    description: Patient ID (must exist)
+    example: 1
+  invoice_id:
+    type: integer
+    nullable: true
+    description: Invoice ID (must exist if provided)
+    example: 1
+  amount:
+    type: number
+    format: float
+    minimum: 0.01
+    description: Payment amount
+    example: 50.00
+  payment_date:
+    type: string
+    format: date
+    description: Date when payment was made
+    example: "2025-12-24"
+  payment_method:
+    type: string
+    enum:
+      - cash
+      - card
+      - transfer
+      - other
+    description: Method used for payment
+    example: cash
+  notes:
+    type: string
+    nullable: true
+    description: Additional notes about the payment
+    example: "Partial payment for invoice INV-001-25"
+required:
+  - clinic_id
+  - patient_id
+  - amount
+  - payment_date
+  - payment_method

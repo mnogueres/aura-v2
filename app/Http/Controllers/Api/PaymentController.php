@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Payment;
+use App\Services\PaymentService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -34,11 +35,11 @@ class PaymentController extends Controller
         );
     }
 
-    public function store(StorePaymentRequest $request): JsonResponse
+    public function store(StorePaymentRequest $request, PaymentService $service): JsonResponse
     {
         $this->authorize('create', Payment::class);
 
-        $payment = Payment::create($request->validated());
+        $payment = $service->create($request->validated());
 
         return (new PaymentResource($payment))
             ->response()

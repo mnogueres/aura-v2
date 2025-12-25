@@ -1,0 +1,468 @@
+/* 
+AURA CORE v1.0
+Decisiones clave:
+- Paginación obligatoria (no scroll infinito)
+- Scroll local solo en listados
+- Desktop estable > responsive dinámico
+- Mobile superficie total
+*/
+
+:root {
+  /* Backgrounds */
+  --aura-bg-base: #F8FAFB;
+  --aura-bg-surface: #FFFFFF;
+  --aura-bg-hover: #F0F4F8;
+  --aura-text-highlight: #528291;
+  
+  /* Cyan (identidad, no decoración) */
+  --aura-cyan: #22D3EE;
+  --aura-cyan-hover: #06B6D4;
+  --aura-cyan-soft: rgba(34, 211, 238, 0.1);
+  --aura-cyan-glow: rgba(34, 211, 238, 0.15);
+  
+  /* Text (gris oscuro, no negro) */
+  --aura-text-primary: #1E293B;
+  --aura-text-base: #475569;
+  --aura-text-secondary: #64748B;
+  --aura-text-muted: #94A3B8;
+  
+  /* Borders */
+  --aura-border-base: #E2E8F0;
+  --aura-border-light: #F1F5F9;
+  
+  /* LED borders (cyan suave) */
+  --aura-led-border: 1px solid rgba(34, 211, 238, 0.2);
+  --aura-led-shadow: 0 0 20px rgba(34, 211, 238, 0.08);
+  
+  /* Shadows */
+  --aura-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --aura-shadow-md: 0 4px 8px rgba(15, 23, 42, 0.06);
+  
+  /* Spacing */
+  --aura-space-2: 0.5rem;
+  --aura-space-3: 0.75rem;
+  --aura-space-4: 1rem;
+  --aura-space-5: 1.25rem;
+  --aura-space-6: 1.5rem;
+  
+  /* Typography */
+  --aura-text-sm: 0.875rem;
+  --aura-text-base: 1rem;
+  --aura-text-lg: 1.125rem;
+  --aura-text-xl: 1.25rem;
+  --aura-text-2xl: 1.5rem;
+  
+  --aura-font-medium: 500;
+  --aura-font-semibold: 600;
+  
+  /* Radius */
+  --aura-radius-sm: 0.375rem;
+  --aura-radius-md: 0.5rem;
+  
+  /* Motion (amortiguado, orgánico) */
+  --aura-duration: 320ms;
+  --aura-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Figtree', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--aura-bg-base);
+  color: var(--aura-text-base);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Layout */
+.aura-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.aura-sidebar {
+  width: 16rem;
+  background: #FFFFFF;
+  position: relative;
+  border-right: var(--aura-led-border);
+}
+
+.aura-logo {
+  padding: var(--aura-space-6);
+  font-size: var(--aura-text-2xl);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-text-secondary);
+  letter-spacing: -0.02em;
+}
+
+.aura-nav {
+  padding: 0 var(--aura-space-4);
+}
+
+.aura-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--aura-space-3);
+  padding: var(--aura-space-3) var(--aura-space-4);
+  margin-bottom: var(--aura-space-2);
+  color: var(--aura-text-secondary);
+  text-decoration: none;
+  border-radius: var(--aura-radius-sm);
+  font-size: var(--aura-text-sm);
+  font-weight: var(--aura-font-medium);
+  transition: all var(--aura-duration) var(--aura-ease);
+}
+
+.aura-nav-item:hover {
+  background: var(--aura-bg-hover);
+  transform: translateX(3px);
+  color: var(--aura-text-secondary);
+}
+
+.aura-nav-item.active {
+  background: var(--aura-cyan-soft);
+  color: var(--aura-cyan);
+}
+
+/* Main */
+.aura-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--aura-bg-surface);
+}
+
+/* Header con elevación sutil y z-index */
+.aura-header {
+  background: var(--aura-bg-surface);
+  padding: var(--aura-space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+}
+
+.aura-header-title {
+  font-size: var(--aura-text-xl);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.aura-user {
+  display: flex;
+  align-items: center;
+  gap: var(--aura-space-4);
+}
+
+.aura-user-name {
+  font-size: var(--aura-text-sm);
+  color: var(--aura-text-secondary);
+  font-weight: var(--aura-font-medium);
+}
+
+.aura-user-form {
+  display: inline-flex;
+}
+
+.aura-content {
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: visible;
+  background: var(--aura-bg-base);
+  padding: var(--aura-space-4) var(--aura-space-5);
+  margin: var(--aura-space-6);
+  margin-bottom: 0;
+  max-width: 1200px;
+  width: 100%;
+  border: var(--aura-led-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03), 0 0 20px rgba(34, 211, 238, 0.02);
+}
+/* Button */
+.aura-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--aura-space-2);
+  padding: var(--aura-space-2) var(--aura-space-4);
+  font-size: var(--aura-text-sm);
+  font-weight: var(--aura-font-medium);
+  text-decoration: none;
+  border: 1px solid var(--aura-border-base);
+  border-radius: var(--aura-radius-sm);
+  background: var(--aura-bg-surface);
+  color: var(--aura-text-base);
+  cursor: pointer;
+  transition: all var(--aura-duration) var(--aura-ease);
+}
+
+.aura-btn:hover {
+  background: var(--aura-bg-hover);
+  border-color: var(--aura-cyan);
+  transform: translateY(-1px);
+  box-shadow: var(--aura-shadow-sm);
+}
+
+.aura-btn:active {
+  transform: translateY(0);
+}
+
+/* Search */
+.aura-search {
+  margin-bottom: var(--aura-space-5);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.aura-search-input {
+  width: 100%;
+  max-width: 32rem;
+  padding: var(--aura-space-3) var(--aura-space-4);
+  font-size: var(--aura-text-base);
+  font-family: inherit;
+  color: var(--aura-text-base);
+  background: var(--aura-bg-surface);
+  border: 1px solid var(--aura-border-base);
+  border-radius: var(--aura-radius-md);
+  transition: all var(--aura-duration) var(--aura-ease);
+  outline: none;
+}
+
+.aura-search-input::placeholder {
+  color: var(--aura-text-muted);
+}
+
+.aura-search-input:focus {
+  border-color: var(--aura-cyan);
+  box-shadow: 0 0 0 3px var(--aura-cyan-glow);
+}
+
+/* Patient list con scrollbar estilizada */
+.aura-patient-list {
+  flex: 0 1 auto;
+  overflow-y: auto;
+  padding-top: var(--aura-space-4);
+  padding-right: var(--aura-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--aura-space-2);
+  max-width: 56rem;
+  max-height: calc(100vh - 300px);
+}
+
+/* Scrollbar custom: 4px, base → cyan on hover */
+.aura-patient-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.aura-patient-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.aura-patient-list::-webkit-scrollbar-thumb {
+  background: var(--aura-border-base);
+  border-radius: 6px;
+  transition: background var(--aura-duration) var(--aura-ease);
+}
+
+.aura-patient-list::-webkit-scrollbar-thumb:hover {
+  background: var(--aura-cyan);
+}
+
+.aura-patient-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--aura-space-3) var(--aura-space-5);
+  background: var(--aura-bg-surface);
+  border: 1px solid var(--aura-border-light);
+  border-radius: var(--aura-radius-md);
+  cursor: pointer;
+  transition: all var(--aura-duration) var(--aura-ease);
+}
+
+.aura-patient-item:hover {
+  background: var(--aura-bg-hover);
+  border-color: var(--aura-cyan);
+  transform: translateY(-2px);
+  box-shadow: var(--aura-shadow-md);
+}
+
+.aura-patient-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--aura-space-2);
+}
+
+/* Legibilidad mejorada: color base (no secondary) */
+.aura-patient-name {
+  font-size: var(--aura-text-base);
+  font-weight: 500;
+  color: var(--aura-text-highlight);
+  letter-spacing: -0.01em;
+}
+
+.aura-patient-dni {
+  font-size: var(--aura-text-sm);
+  color: #94A3B8;
+}
+
+.aura-patient-status {
+  font-size: var(--aura-text-sm);
+  font-weight: var(--aura-font-medium);
+  padding: var(--aura-space-2) var(--aura-space-3);
+  border-radius: var(--aura-radius-sm);
+}
+
+.aura-patient-status.active {
+  background: var(--aura-cyan-soft);
+  color: var(--aura-cyan);
+}
+
+.aura-patient-status.inactive {
+  background: var(--aura-border-light);
+  color: var(--aura-text-muted);
+}
+
+.aura-patient-item[x-show] {
+  transition: opacity var(--aura-duration) var(--aura-ease),
+              transform var(--aura-duration) var(--aura-ease);
+}
+
+.aura-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  padding: 0 var(--aura-space-4);
+  background: transparent;
+  flex-shrink: 0;
+  margin: var(--aura-space-3) var(--aura-space-6);
+  margin-bottom: var(--aura-space-6);
+  max-width: 1200px;
+  width: auto;
+  z-index: 5;
+}
+
+/* Pagination */
+.aura-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--aura-space-3);
+}
+
+.aura-pagination-btn {
+  padding: var(--aura-space-2) var(--aura-space-4);
+  font-size: var(--aura-text-sm);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-text-secondary);
+  text-decoration: none;
+  border: 1px solid var(--aura-border-base);
+  border-radius: var(--aura-radius-sm);
+  background: var(--aura-bg-surface);
+  transition: all var(--aura-duration) var(--aura-ease);
+}
+
+.aura-pagination-btn:hover:not(.disabled) {
+  border-color: var(--aura-cyan);
+  color: var(--aura-text-base);
+  transform: translateY(-1px);
+}
+
+.aura-pagination-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.aura-pagination-pages {
+  display: flex;
+  gap: var(--aura-space-2);
+}
+
+.aura-pagination-page {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--aura-text-sm);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-text-secondary);
+  text-decoration: none;
+  border-radius: var(--aura-radius-sm);
+  transition: all var(--aura-duration) var(--aura-ease);
+}
+
+.aura-pagination-page:hover {
+  background: var(--aura-bg-hover);
+  color: var(--aura-text-base);
+}
+
+.aura-pagination-page.active {
+  background: var(--aura-cyan-soft);
+  color: var(--aura-cyan);
+}
+
+/* Responsive */
+
+/* Desktop grande - panel centrado */
+@media (min-width: 1280px) {
+  .aura-content {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .aura-statusbar {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+
+/* Móvil - superficie completa: sin márgenes, sin bordes, sin radios, 100% ancho */
+@media (max-width: 640px) {
+  .aura-sidebar {
+    border-right: none;
+    box-shadow: none;
+  }
+  
+  .aura-content {
+    margin: 0;
+    padding: var(--aura-space-4);
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    height: calc(100vh - 60px);
+    max-width: 100%;
+  }
+  
+  .aura-statusbar {
+    margin: 0;
+    background: var(--aura-bg-surface);
+    border-top: 1px solid var(--aura-border-light);
+  }
+  
+  .aura-pagination {
+    gap: var(--aura-space-2);
+  }
+  
+  .aura-pagination-pages {
+    gap: var(--aura-space-1);
+  }
+  
+  .aura-pagination-page {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.75rem;
+  }
+}

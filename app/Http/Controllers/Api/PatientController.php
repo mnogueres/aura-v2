@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePatientRequest;
 use App\Http\Resources\PatientResource;
 use App\Models\Patient;
+use App\Services\PatientService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -31,11 +32,11 @@ class PatientController extends Controller
         );
     }
 
-    public function store(StorePatientRequest $request): JsonResponse
+    public function store(StorePatientRequest $request, PatientService $service): JsonResponse
     {
         $this->authorize('create', Patient::class);
 
-        $patient = Patient::create($request->validated());
+        $patient = $service->create($request->validated());
 
         return (new PatientResource($patient))
             ->response()

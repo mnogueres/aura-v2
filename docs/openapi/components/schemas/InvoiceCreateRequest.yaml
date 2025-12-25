@@ -1,0 +1,41 @@
+type: object
+description: Request body for creating an invoice
+properties:
+  clinic_id:
+    type: integer
+    description: Clinic ID (must exist)
+    example: 1
+  patient_id:
+    type: integer
+    description: Patient ID (must exist)
+    example: 1
+  invoice_number:
+    type: string
+    maxLength: 50
+    description: Unique invoice number
+    example: "INV-001-25"
+  invoice_date:
+    type: string
+    format: date
+    description: Date when invoice was issued
+    example: "2025-12-24"
+  status:
+    type: string
+    enum:
+      - draft
+      - issued
+      - paid
+      - cancelled
+    description: Invoice status
+    example: issued
+  notes:
+    type: string
+    nullable: true
+    description: Additional notes about the invoice
+    example: "Orthodontic treatment"
+required:
+  - clinic_id
+  - patient_id
+  - invoice_number
+  - invoice_date
+  - status

@@ -1,0 +1,81 @@
+get:
+  summary: List invoices
+  description: Retrieve a paginated list of invoices for the authenticated user's clinic
+  operationId: listInvoices
+  tags:
+    - Invoices
+  parameters:
+    - $ref: '../components/parameters/Page.yaml'
+  responses:
+    '200':
+      description: Successful response
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../components/schemas/ApiEnvelope.yaml'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../components/schemas/Invoice.yaml'
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        format: uuid
+                      pagination:
+                        $ref: '../components/schemas/Pagination.yaml'
+    '401':
+      $ref: '../components/responses/Unauthorized.yaml'
+    '403':
+      $ref: '../components/responses/Forbidden.yaml'
+    '429':
+      $ref: '../components/responses/RateLimited.yaml'
+
+post:
+  summary: Create invoice
+  description: Create a new invoice in the authenticated user's clinic
+  operationId: createInvoice
+  tags:
+    - Invoices
+  parameters:
+    - $ref: '../components/parameters/IdempotencyKey.yaml'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/InvoiceCreateRequest.yaml'
+  responses:
+    '201':
+      description: Invoice created successfully
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../components/schemas/ApiEnvelope.yaml'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../components/schemas/Invoice.yaml'
+                  meta:
+                    type: object
+                    properties:
+                      request_id:
+                        type: string
+                        format: uuid
+    '400':
+      $ref: '../components/responses/BadRequest.yaml'
+    '401':
+      $ref: '../components/responses/Unauthorized.yaml'
+    '403':
+      $ref: '../components/responses/Forbidden.yaml'
+    '409':
+      $ref: '../components/responses/Conflict.yaml'
+    '422':
+      $ref: '../components/responses/ValidationError.yaml'
+    '429':
+      $ref: '../components/responses/RateLimited.yaml'

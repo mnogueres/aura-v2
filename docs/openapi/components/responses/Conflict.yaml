@@ -1,0 +1,36 @@
+description: Conflict - Idempotency key was used with different request body
+content:
+  application/json:
+    schema:
+      allOf:
+        - $ref: '../schemas/ApiEnvelope.yaml'
+        - type: object
+          properties:
+            data:
+              type: "null"
+            error:
+              allOf:
+                - $ref: '../schemas/Error.yaml'
+                - type: object
+                  properties:
+                    code:
+                      example: "IDEMPOTENCY_KEY_MISMATCH"
+                    message:
+                      example: "This Idempotency-Key was used with a different request body"
+                    details:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          format: uuid
+                          example: "550e8400-e29b-41d4-a716-446655440000"
+                        endpoint:
+                          type: string
+                          example: "api/v1/payments"
+            meta:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                  example: "660e8400-e29b-41d4-a716-446655440001"

@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Events\Platform\IdempotencyConflict;
+use App\Events\Platform\IdempotencyReplayed;
 use App\Models\IdempotencyKey;
 use Closure;
 use Illuminate\Http\Request;
@@ -38,6 +40,12 @@ class EnsureIdempotency
 
         if ($existing) {
             if ($existing->request_hash !== $requestHash) {
+                // Emit platform.idempotency.conflict event
+                event(new IdempotencyConflict(
+                    endpoint: $endpoint,
+                    method: $method
+                ));
+
                 return response()->apiError(
                     'IDEMPOTENCY_KEY_MISMATCH',
                     'This Idempotency-Key was used with a different request body',
@@ -48,6 +56,12 @@ class EnsureIdempotency
                     ]
                 );
             }
+
+            // Emit platform.idempotency.replayed event
+            event(new IdempotencyReplayed(
+                endpoint: $endpoint,
+                method: $method
+            ));
 
             return $this->restoreResponse($existing);
         }

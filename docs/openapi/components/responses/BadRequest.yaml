@@ -1,0 +1,26 @@
+description: Bad Request - Missing or invalid required header/parameter
+content:
+  application/json:
+    schema:
+      allOf:
+        - $ref: '../schemas/ApiEnvelope.yaml'
+        - type: object
+          properties:
+            data:
+              type: "null"
+            error:
+              allOf:
+                - $ref: '../schemas/Error.yaml'
+                - type: object
+                  properties:
+                    code:
+                      example: "IDEMPOTENCY_KEY_REQUIRED"
+                    message:
+                      example: "The Idempotency-Key header is required for this endpoint"
+            meta:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                  example: "550e8400-e29b-41d4-a716-446655440000"

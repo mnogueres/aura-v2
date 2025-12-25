@@ -1,0 +1,91 @@
+type: object
+description: Invoice entity with calculated totals
+properties:
+  id:
+    type: integer
+    description: Invoice ID (auto-generated)
+    readOnly: true
+    example: 1
+  invoice_number:
+    type: string
+    description: Unique invoice number (format INV-{seq}-{YY})
+    example: "INV-001-25"
+  invoice_date:
+    type: string
+    format: date
+    description: Date when invoice was issued
+    example: "2025-12-24"
+  status:
+    type: string
+    description: Invoice status
+    enum:
+      - draft
+      - issued
+      - paid
+      - cancelled
+    example: issued
+  subtotal:
+    type: number
+    format: float
+    description: Sum of all items before tax (calculated)
+    readOnly: true
+    example: 100.00
+  tax_total:
+    type: number
+    format: float
+    description: Total tax amount (calculated)
+    readOnly: true
+    example: 21.00
+  total:
+    type: number
+    format: float
+    description: Total amount including tax (calculated)
+    readOnly: true
+    example: 121.00
+  paid_amount:
+    type: number
+    format: float
+    description: Total amount paid so far (calculated)
+    readOnly: true
+    example: 50.00
+  balance_due:
+    type: number
+    format: float
+    description: Remaining amount to be paid (calculated)
+    readOnly: true
+    example: 71.00
+  patient:
+    type: object
+    description: Associated patient (summary)
+    properties:
+      id:
+        type: integer
+        example: 1
+      first_name:
+        type: string
+        example: Ana
+      last_name:
+        type: string
+        example: García
+    required:
+      - id
+      - first_name
+      - last_name
+  created_at:
+    type: string
+    format: date-time
+    description: Record creation timestamp
+    readOnly: true
+    example: "2025-12-24T10:00:00.000000Z"
+required:
+  - id
+  - invoice_number
+  - invoice_date
+  - status
+  - subtotal
+  - tax_total
+  - total
+  - paid_amount
+  - balance_due
+  - patient
+  - created_at

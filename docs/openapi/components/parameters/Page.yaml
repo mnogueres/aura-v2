@@ -1,0 +1,9 @@
+name: page
+in: query
+description: Page number for pagination (1-indexed)
+required: false
+schema:
+  type: integer
+  minimum: 1
+  default: 1
+example: 1

@@ -1,0 +1,54 @@
+type: object
+description: Patient entity
+properties:
+  id:
+    type: integer
+    description: Patient ID (auto-generated)
+    readOnly: true
+    example: 1
+  first_name:
+    type: string
+    description: Patient first name
+    example: Ana
+  last_name:
+    type: string
+    description: Patient last name
+    example: García
+  dni:
+    type: string
+    description: National identification number
+    nullable: true
+    example: "12345678A"
+  email:
+    type: string
+    format: email
+    description: Patient email address
+    nullable: true
+    example: ana.garcia@example.com
+  phone:
+    type: string
+    description: Patient phone number
+    nullable: true
+    example: "+34600123456"
+  birth_date:
+    type: string
+    format: date
+    description: Patient date of birth
+    nullable: true
+    example: "1990-05-15"
+  notes:
+    type: string
+    description: Additional notes about the patient
+    nullable: true
+    example: "Allergic to penicillin"
+  created_at:
+    type: string
+    format: date-time
+    description: Record creation timestamp
+    readOnly: true
+    example: "2025-12-24T10:00:00.000000Z"
+required:
+  - id
+  - first_name
+  - last_name
+  - created_at

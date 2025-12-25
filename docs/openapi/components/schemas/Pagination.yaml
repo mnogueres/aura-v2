@@ -1,0 +1,19 @@
+type: object
+description: Pagination metadata for list endpoints
+properties:
+  total:
+    type: integer
+    description: Total number of items across all pages
+    example: 42
+  per_page:
+    type: integer
+    description: Number of items per page
+    example: 8
+  current_page:
+    type: integer
+    description: Current page number (1-indexed)
+    example: 1
+required:
+  - total
+  - per_page
+  - current_page

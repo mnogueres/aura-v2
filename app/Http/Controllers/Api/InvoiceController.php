@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Resources\InvoiceResource;
 use App\Models\Invoice;
+use App\Services\InvoiceService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -34,11 +35,11 @@ class InvoiceController extends Controller
         );
     }
 
-    public function store(StoreInvoiceRequest $request): JsonResponse
+    public function store(StoreInvoiceRequest $request, InvoiceService $service): JsonResponse
     {
         $this->authorize('create', Invoice::class);
 
-        $invoice = Invoice::create($request->validated());
+        $invoice = $service->create($request->validated());
 
         return (new InvoiceResource($invoice))
             ->response()

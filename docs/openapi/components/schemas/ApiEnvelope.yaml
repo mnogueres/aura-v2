@@ -1,0 +1,24 @@
+type: object
+description: Standard API response envelope used for all endpoints
+properties:
+  data:
+    description: Response payload (can be object, array, or null)
+    oneOf:
+      - type: object
+      - type: array
+        items: {}
+      - type: "null"
+  meta:
+    type: object
+    description: Metadata about the response
+    properties:
+      request_id:
+        type: string
+        format: uuid
+        description: Unique identifier for request tracing
+      pagination:
+        $ref: './Pagination.yaml'
+  error:
+    $ref: './Error.yaml'
+required:
+  - data

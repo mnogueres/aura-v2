@@ -1,0 +1,51 @@
+type: object
+description: Request body for creating a patient
+properties:
+  clinic_id:
+    type: integer
+    description: Clinic ID (must exist)
+    example: 1
+  first_name:
+    type: string
+    maxLength: 255
+    description: Patient first name
+    example: Ana
+  last_name:
+    type: string
+    maxLength: 255
+    description: Patient last name
+    example: García
+  dni:
+    type: string
+    maxLength: 50
+    nullable: true
+    description: National identification number
+    example: "12345678A"
+  email:
+    type: string
+    format: email
+    maxLength: 255
+    nullable: true
+    description: Patient email address
+    example: ana.garcia@example.com
+  phone:
+    type: string
+    maxLength: 50
+    nullable: true
+    description: Patient phone number
+    example: "+34600123456"
+  birth_date:
+    type: string
+    format: date
+    nullable: true
+    description: Patient date of birth
+    example: "1990-05-15"
+  notes:
+    type: string
+    nullable: true
+    description: Additional notes about the patient
+    example: "Allergic to penicillin"
+required:
+  - clinic_id
+  - first_name
+  - last_name

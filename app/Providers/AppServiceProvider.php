@@ -82,6 +82,7 @@ class AppServiceProvider extends ServiceProvider
         $timelineProjector = app(\App\Projections\PatientTimelineProjector::class);
         $summaryProjector = app(\App\Projections\PatientSummaryProjector::class);
         $billingTimelineProjector = app(\App\Projections\BillingTimelineProjector::class);
+        $auditTrailProjector = app(\App\Projections\AuditTrailProjector::class);
 
         // Patient Timeline Projection
         Event::listen(\App\Events\CRM\PatientCreated::class, [$timelineProjector, 'handlePatientCreated']);
@@ -107,5 +108,10 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(\App\Events\Billing\PaymentRecorded::class, [$billingTimelineProjector, 'handlePaymentRecorded']);
         Event::listen(\App\Events\Billing\PaymentApplied::class, [$billingTimelineProjector, 'handlePaymentApplied']);
         Event::listen(\App\Events\Billing\PaymentUnlinked::class, [$billingTimelineProjector, 'handlePaymentUnlinked']);
+
+        // Audit Trail Projection
+        Event::listen(\App\Events\Platform\RateLimited::class, [$auditTrailProjector, 'handleRateLimited']);
+        Event::listen(\App\Events\Platform\IdempotencyReplayed::class, [$auditTrailProjector, 'handleIdempotencyReplayed']);
+        Event::listen(\App\Events\Platform\IdempotencyConflict::class, [$auditTrailProjector, 'handleIdempotencyConflict']);
     }
 }

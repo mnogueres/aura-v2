@@ -1,0 +1,13 @@
+name: Idempotency-Key
+in: header
+description: |
+  Unique key to prevent duplicate requests. Required for all POST endpoints.
+  - Same key + same body → cached response (201)
+  - Same key + different body → 409 Conflict
+  - Missing key → 400 Bad Request
+  - TTL: 24 hours
+required: true
+schema:
+  type: string
+  format: uuid
+example: "550e8400-e29b-41d4-a716-446655440000"

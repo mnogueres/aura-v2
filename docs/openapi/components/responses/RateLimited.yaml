@@ -1,0 +1,34 @@
+description: Too Many Requests - Rate limit exceeded
+content:
+  application/json:
+    schema:
+      allOf:
+        - $ref: '../schemas/ApiEnvelope.yaml'
+        - type: object
+          properties:
+            data:
+              type: "null"
+            error:
+              allOf:
+                - $ref: '../schemas/Error.yaml'
+                - type: object
+                  properties:
+                    code:
+                      example: "rate_limited"
+                    message:
+                      example: "Too many requests. Please slow down."
+                    details:
+                      type: object
+                      properties:
+                        retry_after:
+                          type: integer
+                          description: Seconds until rate limit resets
+                          nullable: true
+                          example: 60
+            meta:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                  example: "550e8400-e29b-41d4-a716-446655440000"
