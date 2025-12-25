@@ -4,6 +4,9 @@
 
 @section('content')
 <div class="aura-workspace">
+    {{-- Patient Identity (Read-only) --}}
+    @include('workspace.patient._identity', ['patient' => $patient])
+
     @if($summary)
         @include('workspace.patient._summary', ['summary' => $summary])
     @else

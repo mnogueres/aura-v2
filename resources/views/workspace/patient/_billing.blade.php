@@ -4,11 +4,14 @@
     @if(count($billing) > 0)
         <div class="aura-billing-timeline">
             @foreach($billing as $event)
-            <div class="aura-billing-item">
+            <div class="aura-billing-item {{ \App\Helpers\EventHumanizer::getColorClass($event['event_name']) }}">
                 <div class="aura-billing-marker"></div>
                 <div class="aura-billing-content">
                     <div class="aura-billing-header">
-                        <span class="aura-billing-event">{{ $event['event_name'] }}</span>
+                        <div class="aura-billing-event-wrapper">
+                            <span class="aura-billing-icon">{!! \App\Helpers\EventHumanizer::getIcon($event['event_name']) !!}</span>
+                            <span class="aura-billing-event">{{ \App\Helpers\EventHumanizer::humanize($event['event_name']) }}</span>
+                        </div>
                         <span class="aura-billing-date">
                             {{ \Carbon\Carbon::parse($event['occurred_at'])->format('d/m/Y H:i') }}
                         </span>

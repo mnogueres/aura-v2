@@ -474,6 +474,59 @@ body {
   gap: var(--aura-space-6);
 }
 
+/* Patient Identity Block */
+.aura-patient-identity {
+  background: var(--aura-bg-surface);
+  border: var(--aura-led-border);
+  border-radius: var(--aura-radius-md);
+  padding: var(--aura-space-6);
+  box-shadow: var(--aura-led-shadow);
+}
+
+.aura-patient-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--aura-space-4);
+  margin-bottom: var(--aura-space-4);
+}
+
+.aura-patient-name {
+  font-size: var(--aura-text-3xl);
+  font-weight: var(--aura-font-semibold);
+  color: var(--aura-text-primary);
+  margin: 0;
+}
+
+.aura-patient-id {
+  font-size: var(--aura-text-sm);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-cyan);
+  background: var(--aura-cyan-soft);
+  padding: var(--aura-space-1) var(--aura-space-3);
+  border-radius: var(--aura-radius-sm);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+}
+
+.aura-patient-contacts {
+  display: flex;
+  gap: var(--aura-space-6);
+  flex-wrap: wrap;
+}
+
+.aura-contact-item {
+  display: flex;
+  align-items: center;
+  gap: var(--aura-space-2);
+  font-size: var(--aura-text-sm);
+  color: var(--aura-text-secondary);
+}
+
+.aura-contact-icon {
+  color: var(--aura-cyan);
+  flex-shrink: 0;
+}
+
 /* Summary */
 .aura-summary {
   background: var(--aura-bg-surface);
@@ -607,6 +660,19 @@ body {
   gap: var(--aura-space-3);
 }
 
+.aura-timeline-event-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--aura-space-2);
+}
+
+.aura-timeline-icon {
+  color: var(--aura-cyan);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .aura-timeline-event {
   font-size: var(--aura-text-base);
   font-weight: var(--aura-font-medium);
@@ -660,6 +726,19 @@ body {
   margin-bottom: var(--aura-space-2);
 }
 
+.aura-billing-event-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--aura-space-2);
+}
+
+.aura-billing-icon {
+  color: var(--aura-text-highlight);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .aura-billing-event {
   font-size: var(--aura-text-base);
   font-weight: var(--aura-font-medium);
@@ -685,6 +764,57 @@ body {
 
 .aura-billing-ref {
   color: var(--aura-text-secondary);
+}
+
+/* Event type color variants */
+.aura-event-created .aura-timeline-marker,
+.aura-event-created .aura-billing-marker {
+  background: #10B981; /* Green for created events */
+}
+
+.aura-event-created .aura-timeline-icon,
+.aura-event-created .aura-billing-icon {
+  color: #10B981;
+}
+
+.aura-event-updated .aura-timeline-marker,
+.aura-event-updated .aura-billing-marker {
+  background: #3B82F6; /* Blue for updated events */
+}
+
+.aura-event-updated .aura-timeline-icon,
+.aura-event-updated .aura-billing-icon {
+  color: #3B82F6;
+}
+
+.aura-event-deleted .aura-timeline-marker,
+.aura-event-deleted .aura-billing-marker {
+  background: #EF4444; /* Red for deleted/voided events */
+}
+
+.aura-event-deleted .aura-timeline-icon,
+.aura-event-deleted .aura-billing-icon {
+  color: #EF4444;
+}
+
+.aura-event-payment .aura-timeline-marker,
+.aura-event-payment .aura-billing-marker {
+  background: var(--aura-cyan); /* Cyan for payment events */
+}
+
+.aura-event-payment .aura-timeline-icon,
+.aura-event-payment .aura-billing-icon {
+  color: var(--aura-cyan);
+}
+
+.aura-event-default .aura-timeline-marker,
+.aura-event-default .aura-billing-marker {
+  background: var(--aura-text-muted);
+}
+
+.aura-event-default .aura-timeline-icon,
+.aura-event-default .aura-billing-icon {
+  color: var(--aura-text-muted);
 }
 
 /* Empty state */

@@ -21,6 +21,15 @@ class PatientWorkspaceController extends Controller
             ? app('currentClinicId')
             : \App\Models\Clinic::latest()->first()?->id ?? 1;
 
+        // Fetch patient model (READ ONLY - for identity display)
+        $patient = \App\Models\Patient::where('clinic_id', $clinicId)
+            ->where('id', $patientId)
+            ->first();
+
+        if (!$patient) {
+            abort(404, 'Patient not found');
+        }
+
         // Fetch patient summary
         $summary = $this->summaryRepository->getByPatient($clinicId, $patientId);
 
@@ -55,6 +64,7 @@ class PatientWorkspaceController extends Controller
         ];
 
         return view('workspace.patient.show', compact(
+            'patient',
             'patientId',
             'summary',
             'timeline',

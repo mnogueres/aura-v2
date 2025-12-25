@@ -4,11 +4,14 @@
     @if(count($timeline) > 0)
         <div class="aura-timeline">
             @foreach($timeline as $event)
-            <div class="aura-timeline-item">
+            <div class="aura-timeline-item {{ \App\Helpers\EventHumanizer::getColorClass($event['event_name']) }}">
                 <div class="aura-timeline-marker"></div>
                 <div class="aura-timeline-content">
                     <div class="aura-timeline-header">
-                        <span class="aura-timeline-event">{{ $event['event_name'] }}</span>
+                        <div class="aura-timeline-event-wrapper">
+                            <span class="aura-timeline-icon">{!! \App\Helpers\EventHumanizer::getIcon($event['event_name']) !!}</span>
+                            <span class="aura-timeline-event">{{ \App\Helpers\EventHumanizer::humanize($event['event_name']) }}</span>
+                        </div>
                         <span class="aura-timeline-date">
                             {{ \Carbon\Carbon::parse($event['occurred_at'])->format('d/m/Y H:i') }}
                         </span>
