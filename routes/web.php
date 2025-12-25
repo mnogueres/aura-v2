@@ -21,3 +21,9 @@ Route::get('/patients', [App\Http\Controllers\PatientController::class, 'index']
 // Workspace routes
 Route::get('/workspace/patients/{patient}', [App\Http\Controllers\PatientWorkspaceController::class, 'show'])
     ->name('workspace.patient.show');
+
+// API Documentation (dev-only)
+Route::get('/docs/api', [App\Http\Controllers\SwaggerController::class, 'index'])
+    ->name('docs.api');
+Route::get('/docs/openapi/openapi.yaml', [App\Http\Controllers\SwaggerController::class, 'yaml'])
+    ->name('docs.openapi.yaml');
