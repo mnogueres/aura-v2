@@ -123,6 +123,19 @@ No almacenamos "importe total de la visita" como campo. El importe se calcula su
 
 ## C. Timeline clínico (visión humana)
 
+### Principio de diseño (regla de oro)
+
+**"Si un elemento del timeline no puede ser explicado en una frase a un paciente, no debe aparecer."**
+
+Este principio garantiza que:
+- Todo lo visible tiene valor humano inmediato
+- No hay jerga técnica ni ruido del sistema
+- El timeline es autoexplicativo para cualquier persona
+
+**Aplicación práctica:**
+- ¿Puedes decirle al paciente "El 15 de diciembre tuvo una visita con el Dr. García"? → ✅ Aparece
+- ¿Puedes decirle al paciente "El sistema registró el evento crm.visit.created"? → ❌ No aparece
+
 ### ¿Qué SÍ aparece en el timeline del paciente?
 
 El timeline clínico muestra **eventos significativos desde la perspectiva humana**:
@@ -179,8 +192,14 @@ El timeline clínico muestra **eventos significativos desde la perspectiva human
 ❌ 15 dic 2025 - Evento: crm.visit.created
    (Demasiado técnico)
 
+❌ 15 dic 2025 - Visita creada
+   (Lenguaje de sistema disfrazado - no aporta valor)
+
+❌ 15 dic 2025, 10:30 - Tratamiento añadido
+   (Acción técnica, no resultado clínico)
+
 ❌ 15 dic 2025, 10:30 - Empaste realizado
-   (Sin contexto de visita)
+   (Sin contexto de visita - fragmentación)
 
 ❌ 20 dic 2025 - billing.invoice.issued
    (Lenguaje de sistema, no humano)
@@ -188,6 +207,13 @@ El timeline clínico muestra **eventos significativos desde la perspectiva human
 ❌ 22 dic 2025 - platform.idempotency.replayed
    (Ruido técnico, invisible para usuario)
 ```
+
+**Nota importante:**
+"Visita creada" y "Tratamiento añadido" son ejemplos de lenguaje técnico camuflado.
+Aunque parecen menos técnicos que `crm.visit.created`, siguen siendo acciones del sistema, no eventos clínicos significativos.
+
+**Correcto:** "Visita con Dr. García" (qué pasó clínicamente)
+**Incorrecto:** "Visita creada" (qué hizo el sistema)
 
 ### Principios del timeline clínico
 
