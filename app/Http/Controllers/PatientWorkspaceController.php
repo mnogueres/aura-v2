@@ -16,7 +16,10 @@ class PatientWorkspaceController extends Controller
 
     public function show(Request $request, int $patientId)
     {
-        $clinicId = app('currentClinicId');
+        // Obtener clinic_id (temporal para demo - usar el último creado)
+        $clinicId = app()->has('currentClinicId')
+            ? app('currentClinicId')
+            : \App\Models\Clinic::latest()->first()?->id ?? 1;
 
         // Fetch patient summary
         $summary = $this->summaryRepository->getByPatient($clinicId, $patientId);
