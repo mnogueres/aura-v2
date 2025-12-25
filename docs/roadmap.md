@@ -32,11 +32,21 @@ Estado: ✅ COMPLETADA
 
 ## FASE 12 — Contrato externo (API pública)
 
-Estado: ⏳ PENDIENTE  
-Opciones:
-- OpenAPI / Swagger
-- Postman collection generada desde contrato
-- Validación automática contra tests
+Estado: ✅ COMPLETADA
+
+### 12 — OpenAPI Specification
+Estado: ✅ COMPLETADA
+- OpenAPI 3.0.3 spec completa (docs/openapi/openapi.yaml)
+- Documenta 4 endpoints Workspace
+- Schemas, ejemplos, y respuestas de error
+- Arquitectura CQRS/Event-driven documentada
+
+### 12.x — Swagger UI
+Estado: ✅ COMPLETADA
+- Integración Swagger UI (dev-only)
+- Accesible en /docs/api (solo local)
+- Assets compilados con Vite
+- Sin exposición en producción
 
 ---
 
@@ -114,12 +124,44 @@ Estado: ✅ COMPLETADA
 
 ## FASE 15 — Workspace (Read-only)
 
-Estado: ⏳ NEXT
-Ideas:
-- Endpoint GET /api/v1/workspace para carga rápida
-- Agregar datos de Patient Summary + últimos N eventos
-- Cache inteligente
-- Minimizar queries a dominio
+Estado: ✅ COMPLETADA
+
+### 15.1 — Workspace API Endpoints
+Estado: ✅ COMPLETADA
+- GET /api/v1/workspace/patients/{patientId}/summary
+- GET /api/v1/workspace/patients/{patientId}/timeline
+- GET /api/v1/workspace/patients/{patientId}/billing
+- GET /api/v1/workspace/audit
+
+### 15.2 — Controllers & Repositories
+Estado: ✅ COMPLETADA
+- PatientSummaryController + Repository
+- PatientTimelineController
+- BillingTimelineController
+- AuditTrailController
+
+### 15.3 — Workspace UI Integration
+Estado: ✅ COMPLETADA
+- Vista PatientWorkspace con Aura design system
+- Componentes Blade reutilizables
+- Timeline con humanización de eventos
+- Paginación implementada
+
+---
+
+## API v1 — Congelación de contrato
+
+**Fecha:** 2025-12-25
+**Estado:** ✅ CONGELADA
+
+API v1 está congelada como contrato estable:
+- No se eliminarán endpoints existentes
+- No se cambiarán contratos (request/response)
+- No se romperán schemas
+- Cambios compatibles permitidos (nuevos endpoints, campos opcionales)
+- Cambios incompatibles requieren /v2
+
+**Documentación:** Ver `docs/API_VERSIONING.md`
 
 ---
 
@@ -127,3 +169,4 @@ Ideas:
 - Ninguna fase se inicia sin confirmación explícita
 - Nada se elimina si tiene tests en verde
 - La arquitectura manda sobre la velocidad
+- API v1 es un contrato vivo: el código debe cumplir el OpenAPI spec

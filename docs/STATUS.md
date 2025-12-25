@@ -1,8 +1,8 @@
 # Aura — Project Status
 
 ## Última sesión
-Fecha: 2025-12-24
-Estado: FASE 14 COMPLETADA
+Fecha: 2025-12-25
+Estado: API v1 CONGELADA
 
 ## Arquitectura validada
 - Multi-tenant por clinic_id (ClinicScope global)
@@ -29,6 +29,11 @@ Estado: FASE 14 COMPLETADA
 - FASE 14.2: Patient Summary Projection (contadores y totales agregados)
 - FASE 14.3: Billing Timeline Projection (timeline financiero con montos)
 - FASE 14.4: Audit Trail Projection (audit técnico platform-wide)
+- FASE 15.1: Workspace API endpoints (summary, timeline, billing, audit)
+- FASE 15.2: Workspace controllers + repositories
+- FASE 15.3: Workspace UI integration con Aura design system
+- FASE 12: OpenAPI specification (docs/openapi/openapi.yaml)
+- FASE 12.x: Swagger UI integration (dev-only)
 
 ## Rate limits activos
 - api-read: 120/min
@@ -47,9 +52,23 @@ Sistema de eventos (FASE 13) y capa de lectura (FASE 14) completamente operativo
 - Idempotencia garantizada en proyecciones
 - Separation of concerns: dominio escribe, proyecciones leen
 
+## API v1 — Contrato congelado
+**Fecha de congelación:** 2025-12-25
+
+API v1 está congelada como contrato estable:
+- No se eliminarán endpoints existentes
+- No se cambiarán contratos (request/response)
+- No se romperán schemas
+- Cambios compatibles permitidos (nuevos endpoints, campos opcionales)
+- Cambios incompatibles requieren /v2
+
+**Documentación:**
+- Política de versionado: `docs/API_VERSIONING.md`
+- OpenAPI spec: `docs/openapi/openapi.yaml`
+- Swagger UI: `http://localhost:8000/docs/api` (dev-only)
+
 ## Próxima fase prevista
-FASE 15 — Workspace (Read-only) API para carga rápida del workspace del usuario
-Alternativa: FASE 12 — OpenAPI / Swagger como contrato vivo
+Pendiente de definición por el usuario
 
 ## Regla para el asistente
 NO avanzar de fase sin confirmación explícita.
