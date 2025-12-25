@@ -2,29 +2,863 @@ openapi: 3.0.3
 
 info:
   title: Aura API
-  description: >
-    Aura v2 API. Clinical management system.
-    All endpoints are multi-tenant and scoped by clinic.
-  version: "1.0.0"
+  version: v1
+  description: |
+    API para gestión clínica multi-tenant con arquitectura CQRS.
+
+    ## Características principales
+
+    - **Multi-tenant**: Todas las operaciones están scoped por `clinic_id`
+    - **CQRS**: Separación clara entre operaciones de lectura (read models/projections) y escritura (commands/eventos)
+    - **Event-driven**: Las operaciones de escritura emiten eventos que actualizan proyecciones
+    - **Read models**: Endpoints de lectura consultan proyecciones optimizadas, no el domain model directamente
+    - **Rate limiting**: Límites diferenciados por tipo de operación (lectura: 120 req/min, escritura: 60 req/min)
+    - **Idempotency**: Operaciones POST requieren `Idempotency-Key` header para prevenir duplicados
+
+    ## Convenciones
+
+    ### Envelope estándar (success)
+    ```json
+    {
+      "data": { ... },
+      "meta": { ... }
+    }
+    ```
+
+    ### Envelope estándar (error)
+    ```json
+    {
+      "data": null,
+      "error": {
+        "code": "error_code",
+        "message": "Human readable message",
+        "details": null
+      },
+      "meta": {
+        "request_id": "uuid"
+      }
+    }
+    ```
+
+    ### Paginación
+    Los endpoints que retornan listas incluyen metadatos de paginación en `meta.pagination`:
+    ```json
+    {
+      "data": [...],
+      "meta": {
+        "pagination": {
+          "total": 100,
+          "per_page": 25,
+          "current_page": 1,
+          "last_page": 4
+        }
+      }
+    }
+    ```
+
+    ### Rate Limiting
+    - Lectura (`GET`): 120 requests/minuto
+    - Escritura (`POST`, `PUT`, `PATCH`, `DELETE`): 60 requests/minuto
+
+    Headers de respuesta:
+    - `X-RateLimit-Limit`: Límite total
+    - `X-RateLimit-Remaining`: Requests restantes
+    - `Retry-After`: Segundos hasta poder reintentar (en caso de 429)
 
 servers:
-  - url: /api/v1
-    description: Production API
+  - url: http://127.0.0.1:8000/api/v1
+    description: Desarrollo local
+  - url: https://api.aura.example.com/v1
+    description: Producción (placeholder)
+
+tags:
+  - name: Workspace
+    description: |
+      Endpoints read-only para consultar proyecciones del workspace del paciente.
+      Estos endpoints NO modifican estado, NO emiten eventos, solo leen de read models.
 
 security:
   - bearerAuth: []
+
+paths:
+  /workspace/patients/{patientId}/summary:
+    get:
+      tags:
+        - Workspace
+      summary: Obtener resumen del paciente
+      description: |
+        Retorna una proyección consolidada con métricas clave del paciente.
+
+        **Fuente**: Read model `PatientSummary` (proyección)
+
+        **No emite eventos**: Solo lectura
+      operationId: getPatientSummary
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+      responses:
+        '200':
+          description: Resumen del paciente obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PatientSummary'
+                  meta:
+                    type: object
+                    example: {}
+              examples:
+                success:
+                  summary: Respuesta exitosa
+                  value:
+                    data:
+                      id: "9d4e8c2a-1b3f-4a5e-8d9c-2b3f4a5e6d7c"
+                      clinic_id: 1
+                      patient_id: 7
+                      created_at_occurred: "2024-10-15T10:30:00Z"
+                      last_activity_at: "2024-12-20T14:22:00Z"
+                      invoices_count: 5
+                      payments_count: 3
+                      total_invoiced_amount: "1500.00"
+                      total_paid_amount: "750.00"
+                      projected_at: "2024-12-25T12:00:00Z"
+                      updated_at: "2024-12-25T12:00:00Z"
+                    meta: {}
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /workspace/patients/{patientId}/timeline:
+    get:
+      tags:
+        - Workspace
+      summary: Obtener timeline del paciente
+      description: |
+        Retorna una lista paginada de eventos relacionados con el paciente
+        en orden cronológico (por `occurred_at`).
+
+        **Fuente**: Read model `PatientTimeline` (proyección)
+
+        **Eventos incluidos**: CRM (creación/actualización paciente), Billing (facturas, pagos)
+
+        **No emite eventos**: Solo lectura
+      operationId: getPatientTimeline
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: Timeline obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatientTimelineItem'
+                  meta:
+                    type: object
+                    properties:
+                      pagination:
+                        $ref: '#/components/schemas/PaginationMeta'
+              examples:
+                success:
+                  summary: Respuesta exitosa con paginación
+                  value:
+                    data:
+                      - id: "9d4e8c2a-1b3f-4a5e-8d9c-2b3f4a5e6d7c"
+                        clinic_id: 1
+                        patient_id: 7
+                        event_name: "crm.patient.created"
+                        event_payload:
+                          patient_id: 7
+                          dni: "12345678A"
+                        occurred_at: "2024-10-15T10:30:00Z"
+                        projected_at: "2024-10-15T10:30:05Z"
+                        source_event_id: "8c3d7b1a-2c4e-5f6a-9b8c-3d4e5f6a7b8c"
+                      - id: "8c3d7b1a-2c4e-5f6a-9b8c-3d4e5f6a7b8c"
+                        clinic_id: 1
+                        patient_id: 7
+                        event_name: "billing.invoice.created"
+                        event_payload:
+                          invoice_id: 123
+                          amount: "500.00"
+                        occurred_at: "2024-11-01T15:45:00Z"
+                        projected_at: "2024-11-01T15:45:02Z"
+                        source_event_id: "7b2c6a19-1c3d-4e5f-8a9b-2c3d4e5f6a7b"
+                    meta:
+                      pagination:
+                        total: 50
+                        per_page: 25
+                        current_page: 1
+                        last_page: 2
+
+  /workspace/patients/{patientId}/billing:
+    get:
+      tags:
+        - Workspace
+      summary: Obtener timeline de facturación del paciente
+      description: |
+        Retorna una lista paginada de eventos de facturación relacionados
+        con el paciente, incluyendo importes y referencias.
+
+        **Fuente**: Read model `BillingTimeline` (proyección)
+
+        **Eventos incluidos**: Facturas (creadas, emitidas, pagadas), Pagos (registrados, aplicados, desvinculados)
+
+        **No emite eventos**: Solo lectura
+      operationId: getPatientBillingTimeline
+      parameters:
+        - $ref: '#/components/parameters/PatientId'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: Timeline de facturación obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BillingTimelineItem'
+                  meta:
+                    type: object
+                    properties:
+                      pagination:
+                        $ref: '#/components/schemas/PaginationMeta'
+              examples:
+                success:
+                  summary: Respuesta exitosa con eventos de facturación
+                  value:
+                    data:
+                      - id: "7b2c6a19-1c3d-4e5f-8a9b-2c3d4e5f6a7b"
+                        clinic_id: 1
+                        patient_id: 7
+                        event_name: "billing.invoice.created"
+                        amount: "500.00"
+                        currency: "EUR"
+                        reference_id: 123
+                        event_payload:
+                          invoice_id: 123
+                          amount: "500.00"
+                          status: "draft"
+                        occurred_at: "2024-11-01T15:45:00Z"
+                        projected_at: "2024-11-01T15:45:02Z"
+                        source_event_id: "6a1b5c28-0b2c-3d4e-7a8b-1c2d3e4f5a6b"
+                      - id: "6a1b5c28-0b2c-3d4e-7a8b-1c2d3e4f5a6b"
+                        clinic_id: 1
+                        patient_id: 7
+                        event_name: "billing.payment.recorded"
+                        amount: "250.00"
+                        currency: "EUR"
+                        reference_id: 456
+                        event_payload:
+                          payment_id: 456
+                          amount: "250.00"
+                          method: "bank_transfer"
+                        occurred_at: "2024-11-15T09:20:00Z"
+                        projected_at: "2024-11-15T09:20:01Z"
+                        source_event_id: "5a0b4c17-9a1b-2c3d-6a7b-0c1d2e3f4a5b"
+                    meta:
+                      pagination:
+                        total: 32
+                        per_page: 25
+                        current_page: 1
+                        last_page: 2
+
+  /workspace/audit:
+    get:
+      tags:
+        - Workspace
+      summary: Obtener audit trail
+      description: |
+        Retorna una lista paginada de eventos de auditoría de la plataforma,
+        ordenados de más reciente a más antiguo.
+
+        **Fuente**: Read model `AuditTrail` (proyección)
+
+        **Eventos incluidos**: Rate limiting, idempotency replays/conflicts, otros eventos de plataforma
+
+        **Filtros**: Puede filtrarse por `severity` y/o `category`
+
+        **No emite eventos**: Solo lectura
+      operationId: getAuditTrail
+      parameters:
+        - name: severity
+          in: query
+          description: Filtrar por nivel de severidad
+          required: false
+          schema:
+            type: string
+            enum:
+              - info
+              - warning
+              - error
+          example: warning
+        - name: category
+          in: query
+          description: Filtrar por categoría de evento
+          required: false
+          schema:
+            type: string
+            enum:
+              - security
+              - platform
+              - business
+          example: security
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: Audit trail obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditTrailItem'
+                  meta:
+                    type: object
+                    properties:
+                      pagination:
+                        $ref: '#/components/schemas/PaginationMeta'
+              examples:
+                success:
+                  summary: Respuesta exitosa con eventos de auditoría
+                  value:
+                    data:
+                      - id: "5a0b4c17-9a1b-2c3d-6a7b-0c1d2e3f4a5b"
+                        clinic_id: 1
+                        event_name: "platform.rate_limited"
+                        category: "security"
+                        severity: "warning"
+                        actor_type: "user"
+                        actor_id: 42
+                        context:
+                          ip: "192.168.1.100"
+                          endpoint: "/api/v1/workspace/patients/7/timeline"
+                          limit: 120
+                        occurred_at: "2024-12-25T11:30:00Z"
+                        projected_at: "2024-12-25T11:30:01Z"
+                        source_event_id: "4a9b3c06-8a0b-1c2d-5a6b-9c0d1e2f3a4b"
+                      - id: "4a9b3c06-8a0b-1c2d-5a6b-9c0d1e2f3a4b"
+                        clinic_id: 1
+                        event_name: "platform.idempotency.replayed"
+                        category: "platform"
+                        severity: "info"
+                        actor_type: "system"
+                        actor_id: null
+                        context:
+                          idempotency_key: "key-abc-123"
+                          original_request_id: "3a8b2c95-7a9b-0c1d-4a5b-8c9d0e1f2a3b"
+                        occurred_at: "2024-12-24T16:45:00Z"
+                        projected_at: "2024-12-24T16:45:00Z"
+                        source_event_id: "3a8b2c95-7a9b-0c1d-4a5b-8c9d0e1f2a3b"
+                    meta:
+                      pagination:
+                        total: 128
+                        per_page: 25
+                        current_page: 1
+                        last_page: 6
 
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
+      description: |
+        Token de autenticación Bearer (JWT o session token según configuración de Laravel).
 
-paths:
-  /patients:
-    $ref: './paths/patients.yaml'
-  /invoices:
-    $ref: './paths/invoices.yaml'
-  /payments:
-    $ref: './paths/payments.yaml'
+        El token debe incluirse en el header `Authorization`:
+        ```
+        Authorization: Bearer {token}
+        ```
+
+        **Scoping multi-tenant**: El `clinic_id` se extrae automáticamente del contexto
+        de autenticación (usuario autenticado). No se envía como parámetro.
+
+  parameters:
+    PatientId:
+      name: patientId
+      in: path
+      description: ID del paciente
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      example: 7
+
+    Page:
+      name: page
+      in: query
+      description: Número de página (paginación basada en offset)
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        default: 1
+      example: 1
+
+  schemas:
+    PatientSummary:
+      type: object
+      description: Proyección consolidada con métricas clave del paciente
+      required:
+        - id
+        - clinic_id
+        - patient_id
+        - created_at_occurred
+        - invoices_count
+        - payments_count
+        - total_invoiced_amount
+        - total_paid_amount
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID de la proyección
+          example: "9d4e8c2a-1b3f-4a5e-8d9c-2b3f4a5e6d7c"
+        clinic_id:
+          type: integer
+          format: int64
+          description: ID de la clínica (multi-tenant)
+          example: 1
+        patient_id:
+          type: integer
+          format: int64
+          description: ID del paciente
+          example: 7
+        created_at_occurred:
+          type: string
+          format: date-time
+          description: Fecha/hora en que se creó el paciente (del evento original)
+          example: "2024-10-15T10:30:00Z"
+        last_activity_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha/hora de última actividad del paciente
+          example: "2024-12-20T14:22:00Z"
+        invoices_count:
+          type: integer
+          format: int32
+          description: Número total de facturas
+          example: 5
+        payments_count:
+          type: integer
+          format: int32
+          description: Número total de pagos
+          example: 3
+        total_invoiced_amount:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          description: Importe total facturado (decimal como string para precisión)
+          example: "1500.00"
+        total_paid_amount:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          description: Importe total pagado (decimal como string para precisión)
+          example: "750.00"
+        projected_at:
+          type: string
+          format: date-time
+          description: Timestamp de cuándo se proyectó/actualizó este read model
+          example: "2024-12-25T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp de última actualización del registro
+          example: "2024-12-25T12:00:00Z"
+
+    PatientTimelineItem:
+      type: object
+      description: Evento del timeline del paciente (proyección)
+      required:
+        - id
+        - clinic_id
+        - patient_id
+        - event_name
+        - occurred_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID del item de timeline
+          example: "9d4e8c2a-1b3f-4a5e-8d9c-2b3f4a5e6d7c"
+        clinic_id:
+          type: integer
+          format: int64
+          description: ID de la clínica
+          example: 1
+        patient_id:
+          type: integer
+          format: int64
+          description: ID del paciente
+          example: 7
+        event_name:
+          type: string
+          description: Nombre técnico del evento
+          example: "crm.patient.created"
+        event_payload:
+          type: object
+          description: Payload del evento original (estructura varía según evento)
+          example:
+            patient_id: 7
+            dni: "12345678A"
+        occurred_at:
+          type: string
+          format: date-time
+          description: Timestamp de cuándo ocurrió el evento original
+          example: "2024-10-15T10:30:00Z"
+        projected_at:
+          type: string
+          format: date-time
+          description: Timestamp de cuándo se proyectó este evento
+          example: "2024-10-15T10:30:05Z"
+        source_event_id:
+          type: string
+          format: uuid
+          description: UUID del evento original en el outbox
+          example: "8c3d7b1a-2c4e-5f6a-9b8c-3d4e5f6a7b8c"
+
+    BillingTimelineItem:
+      type: object
+      description: Evento de facturación del timeline (proyección)
+      required:
+        - id
+        - clinic_id
+        - patient_id
+        - event_name
+        - amount
+        - currency
+        - occurred_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID del item de billing timeline
+          example: "7b2c6a19-1c3d-4e5f-8a9b-2c3d4e5f6a7b"
+        clinic_id:
+          type: integer
+          format: int64
+          description: ID de la clínica
+          example: 1
+        patient_id:
+          type: integer
+          format: int64
+          description: ID del paciente
+          example: 7
+        event_name:
+          type: string
+          description: Nombre técnico del evento de facturación
+          example: "billing.invoice.created"
+        amount:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          description: Importe asociado al evento (decimal como string)
+          example: "500.00"
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: Código de moneda ISO 4217
+          example: "EUR"
+        reference_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID de referencia (invoice_id o payment_id según evento)
+          example: 123
+        event_payload:
+          type: object
+          description: Payload del evento original
+          example:
+            invoice_id: 123
+            amount: "500.00"
+            status: "draft"
+        occurred_at:
+          type: string
+          format: date-time
+          description: Timestamp de cuándo ocurrió el evento
+          example: "2024-11-01T15:45:00Z"
+        projected_at:
+          type: string
+          format: date-time
+          description: Timestamp de cuándo se proyectó este evento
+          example: "2024-11-01T15:45:02Z"
+        source_event_id:
+          type: string
+          format: uuid
+          description: UUID del evento original en el outbox
+          example: "6a1b5c28-0b2c-3d4e-7a8b-1c2d3e4f5a6b"
+
+    AuditTrailItem:
+      type: object
+      description: Evento de auditoría de plataforma (proyección)
+      required:
+        - id
+        - clinic_id
+        - event_name
+        - category
+        - severity
+        - occurred_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID del item de audit trail
+          example: "5a0b4c17-9a1b-2c3d-6a7b-0c1d2e3f4a5b"
+        clinic_id:
+          type: integer
+          format: int64
+          description: ID de la clínica
+          example: 1
+        event_name:
+          type: string
+          description: Nombre técnico del evento de auditoría
+          example: "platform.rate_limited"
+        category:
+          type: string
+          enum:
+            - security
+            - platform
+            - business
+          description: Categoría del evento
+          example: "security"
+        severity:
+          type: string
+          enum:
+            - info
+            - warning
+            - error
+          description: Nivel de severidad
+          example: "warning"
+        actor_type:
+          type: string
+          nullable: true
+          description: Tipo de actor que generó el evento
+          example: "user"
+        actor_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID del actor (si aplica)
+          example: 42
+        context:
+          type: object
+          description: Contexto adicional del evento (estructura varía según evento)
+          example:
+            ip: "192.168.1.100"
+            endpoint: "/api/v1/workspace/patients/7/timeline"
+            limit: 120
+        occurred_at:
+          type: string
+          format: date-time
+          description: Timestamp de cuándo ocurrió el evento
+          example: "2024-12-25T11:30:00Z"
+        projected_at:
+          type: string
+          format: date-time
+          description: Timestamp de cuándo se proyectó este evento
+          example: "2024-12-25T11:30:01Z"
+        source_event_id:
+          type: string
+          format: uuid
+          description: UUID del evento original en el outbox
+          example: "4a9b3c06-8a0b-1c2d-5a6b-9c0d1e2f3a4b"
+
+    PaginationMeta:
+      type: object
+      description: Metadatos de paginación estándar
+      required:
+        - total
+        - per_page
+        - current_page
+        - last_page
+      properties:
+        total:
+          type: integer
+          format: int32
+          description: Número total de items
+          example: 100
+        per_page:
+          type: integer
+          format: int32
+          description: Items por página (siempre 25 en Aura)
+          example: 25
+        current_page:
+          type: integer
+          format: int32
+          description: Página actual
+          example: 1
+        last_page:
+          type: integer
+          format: int32
+          description: Última página disponible
+          example: 4
+
+    ErrorResponse:
+      type: object
+      description: Estructura estándar de respuesta de error
+      required:
+        - data
+        - error
+        - meta
+      properties:
+        data:
+          type: "null"
+          description: Siempre null en errores
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Código de error máquina-legible
+              example: "patient_summary_not_found"
+            message:
+              type: string
+              description: Mensaje de error human-readable
+              example: "Patient summary not found"
+            details:
+              type: object
+              nullable: true
+              description: Detalles adicionales del error (opcional)
+        meta:
+          type: object
+          properties:
+            request_id:
+              type: string
+              format: uuid
+              description: UUID único de la request para tracing
+              example: "3a8b2c95-7a9b-0c1d-4a5b-8c9d0e1f2a3b"
+
+  responses:
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            data: null
+            error:
+              code: "patient_summary_not_found"
+              message: "Patient summary not found"
+              details: null
+            meta:
+              request_id: "3a8b2c95-7a9b-0c1d-4a5b-8c9d0e1f2a3b"
+
+    Unauthorized:
+      description: No autenticado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            data: null
+            error:
+              code: "unauthenticated"
+              message: "Unauthenticated"
+              details: null
+            meta:
+              request_id: "2a7b1c84-6a8b-9c0d-3a4b-7c8d9e0f1a2b"
+
+    Forbidden:
+      description: No autorizado (autenticado pero sin permisos)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            data: null
+            error:
+              code: "forbidden"
+              message: "This action is unauthorized"
+              details: null
+            meta:
+              request_id: "1a6b0c73-5a7b-8c9d-2a3b-6c7d8e9f0a1b"
+
+    ValidationError:
+      description: Error de validación
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            data: null
+            error:
+              code: "validation_error"
+              message: "The given data was invalid"
+              details:
+                amount:
+                  - "The amount field is required"
+                  - "The amount must be a number"
+            meta:
+              request_id: "9a5b9c62-4a6b-7c8d-1a2b-5c6d7e8f9a0b"
+
+    IdempotencyConflict:
+      description: Conflicto de idempotencia (mismo Idempotency-Key, request diferente)
+      headers:
+        Retry-After:
+          description: Segundos hasta poder reintentar
+          schema:
+            type: integer
+          example: 60
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            data: null
+            error:
+              code: "idempotency_conflict"
+              message: "Idempotency key already used with different request"
+              details:
+                idempotency_key: "key-abc-123"
+                original_request_fingerprint: "hash-xyz"
+            meta:
+              request_id: "8a4b8c51-3a5b-6c7d-0a1b-4c5d6e7f8a9b"
+
+    RateLimitExceeded:
+      description: Límite de rate exceeded
+      headers:
+        X-RateLimit-Limit:
+          description: Límite total de requests
+          schema:
+            type: integer
+          example: 120
+        X-RateLimit-Remaining:
+          description: Requests restantes en la ventana actual
+          schema:
+            type: integer
+          example: 0
+        Retry-After:
+          description: Segundos hasta poder reintentar
+          schema:
+            type: integer
+          example: 45
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            data: null
+            error:
+              code: "rate_limit_exceeded"
+              message: "Too many requests. Please try again later"
+              details:
+                limit: 120
+                window: "1 minute"
+            meta:
+              request_id: "7a3b7c40-2a4b-5c6d-9a0b-3c4d5e6f7a8b"
