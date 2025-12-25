@@ -149,6 +149,38 @@ Estado: ✅ COMPLETADA
 
 ---
 
+## FASE 16 — Modelo Clínico: Visitas y Tratamientos
+
+**Tipo:** 🔒 DISEÑO EXCLUSIVAMENTE
+Estado: ✅ COMPLETADA
+
+### Objetivo
+Definir el modelo clínico conceptual respondiendo:
+- ¿Qué es una visita clínica en Aura?
+- ¿Qué es un tratamiento y cómo se relaciona con una visita?
+- ¿Qué debe ver el usuario en el Workspace?
+- ¿Qué NO debe verse nunca (eventos técnicos)?
+
+### Entregables
+- ✅ Documento `docs/CLINICAL_MODEL.md` creado
+- ✅ Definición de conceptos clínicos (Visita, Tratamiento)
+- ✅ Modelo conceptual no técnico
+- ✅ Timeline clínico humanizado especificado
+- ✅ Roles y expectativas definidos (Auxiliar, Profesional, Contable)
+- ✅ Relación con arquitectura event-driven explicada
+
+### Prohibiciones cumplidas
+- ❌ NO se crearon migrations
+- ❌ NO se crearon modelos Eloquent
+- ❌ NO se crearon eventos
+- ❌ NO se crearon controllers
+- ❌ NO se crearon vistas
+- ❌ NO se escribió código de implementación
+
+**Siguiente paso:** Validación conceptual antes de implementación
+
+---
+
 ## API v1 — Congelación de contrato
 
 **Fecha:** 2025-12-25
