@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\PatientSummaryRepository;
+use App\Repositories\ClinicalVisitRepository;
+use App\Repositories\ClinicalTreatmentRepository;
 use App\Models\PatientTimeline;
 use App\Models\BillingTimeline;
 use Illuminate\Http\Request;
@@ -10,7 +12,9 @@ use Illuminate\Http\Request;
 class PatientWorkspaceController extends Controller
 {
     public function __construct(
-        private readonly PatientSummaryRepository $summaryRepository
+        private readonly PatientSummaryRepository $summaryRepository,
+        private readonly ClinicalVisitRepository $clinicalVisitRepository,
+        private readonly ClinicalTreatmentRepository $clinicalTreatmentRepository
     ) {
     }
 
@@ -32,6 +36,14 @@ class PatientWorkspaceController extends Controller
 
         // Fetch patient summary
         $summary = $this->summaryRepository->getByPatient($clinicId, $patientId);
+
+        // Fetch clinical visits (FASE 17)
+        $clinicalVisits = $this->clinicalVisitRepository->getVisitsForPatient($clinicId, $patientId);
+
+        // Load treatments for each visit
+        foreach ($clinicalVisits as $visit) {
+            $visit->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($visit->id);
+        }
 
         // Fetch patient timeline (with pagination)
         $timelinePage = $request->query('timeline_page', 1);
@@ -67,6 +79,7 @@ class PatientWorkspaceController extends Controller
             'patient',
             'patientId',
             'summary',
+            'clinicalVisits',
             'timeline',
             'timelineMeta',
             'billing',

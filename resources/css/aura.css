@@ -833,3 +833,184 @@ body {
   color: var(--aura-text-secondary);
   font-weight: var(--aura-font-medium);
 }
+
+/* Clinical Visits (FASE 17) */
+.aura-timeline-block {
+  background: var(--aura-bg-surface);
+  border: 1px solid var(--aura-border-base);
+  border-radius: var(--aura-radius-md);
+  padding: var(--aura-space-6);
+  margin-bottom: var(--aura-space-6);
+}
+
+.aura-block-title {
+  font-size: var(--aura-text-xl);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-text-primary);
+  margin-bottom: var(--aura-space-5);
+  padding-bottom: var(--aura-space-3);
+  border-bottom: 1px solid var(--aura-border-light);
+}
+
+.aura-visits-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--aura-space-3);
+}
+
+.aura-visit-item {
+  background: var(--aura-bg-base);
+  border: 1px solid var(--aura-border-light);
+  border-radius: var(--aura-radius-sm);
+  transition: all var(--aura-duration) var(--aura-ease);
+}
+
+.aura-visit-item:hover {
+  border-color: var(--aura-cyan);
+}
+
+.aura-visit-item[open] {
+  border-color: var(--aura-cyan);
+  background: var(--aura-bg-surface);
+}
+
+.aura-visit-summary {
+  padding: var(--aura-space-4);
+  cursor: pointer;
+  list-style: none;
+  transition: background var(--aura-duration) var(--aura-ease);
+}
+
+.aura-visit-summary::-webkit-details-marker {
+  display: none;
+}
+
+.aura-visit-summary:hover {
+  background: var(--aura-bg-hover);
+}
+
+.aura-visit-header {
+  display: flex;
+  align-items: center;
+  gap: var(--aura-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--aura-space-2);
+}
+
+.aura-visit-date {
+  font-size: var(--aura-text-sm);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-text-muted);
+  font-family: 'Courier New', monospace;
+}
+
+.aura-visit-professional {
+  font-size: var(--aura-text-base);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-text-primary);
+}
+
+.aura-visit-badge {
+  font-size: var(--aura-text-sm);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-cyan);
+  background: var(--aura-cyan-soft);
+  padding: var(--aura-space-1) var(--aura-space-3);
+  border-radius: var(--aura-radius-sm);
+}
+
+.aura-visit-summary-text {
+  font-size: var(--aura-text-sm);
+  color: var(--aura-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.aura-visit-details {
+  padding: var(--aura-space-4);
+  padding-top: 0;
+  border-top: 1px solid var(--aura-border-light);
+}
+
+.aura-treatments-title {
+  font-size: var(--aura-text-sm);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-text-primary);
+  margin-bottom: var(--aura-space-3);
+}
+
+.aura-treatments-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--aura-space-2);
+}
+
+.aura-treatment-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--aura-space-2);
+  padding: var(--aura-space-3);
+  background: var(--aura-bg-base);
+  border-radius: var(--aura-radius-sm);
+  font-size: var(--aura-text-sm);
+}
+
+.aura-treatment-type {
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-text-primary);
+}
+
+.aura-treatment-tooth {
+  color: var(--aura-text-secondary);
+  font-size: var(--aura-text-sm);
+}
+
+.aura-treatment-amount {
+  font-weight: var(--aura-font-semibold);
+  color: var(--aura-cyan);
+  margin-left: auto;
+}
+
+.aura-treatment-notes {
+  width: 100%;
+  margin: var(--aura-space-2) 0 0 0;
+  padding-top: var(--aura-space-2);
+  border-top: 1px solid var(--aura-border-light);
+  color: var(--aura-text-secondary);
+  font-size: var(--aura-text-sm);
+  line-height: 1.5;
+}
+
+.aura-no-treatments {
+  font-size: var(--aura-text-sm);
+  color: var(--aura-text-muted);
+  font-style: italic;
+  margin: 0;
+}
+
+/* Clinical Visits - Examples (UX) */
+.aura-example-hint {
+  font-size: var(--aura-text-sm);
+  color: var(--aura-text-secondary);
+  margin-bottom: var(--aura-space-4);
+  font-weight: var(--aura-font-medium);
+}
+
+.aura-example-badge {
+  font-size: var(--aura-text-xs);
+  font-weight: var(--aura-font-medium);
+  color: var(--aura-text-muted);
+  background: var(--aura-bg-hover);
+  padding: var(--aura-space-1) var(--aura-space-2);
+  border-radius: var(--aura-radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.aura-visit-example {
+  opacity: 0.85;
+}

@@ -15,6 +15,11 @@
         </div>
     @endif
 
+    {{-- Historial de Visitas Clínicas (FASE 17) --}}
+    @include('workspace.patient._clinical_visits', [
+        'clinicalVisits' => $clinicalVisits
+    ])
+
     <div class="aura-workspace-timelines">
         @include('workspace.patient._timeline', [
             'timeline' => $timeline,

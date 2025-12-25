@@ -83,6 +83,8 @@ class AppServiceProvider extends ServiceProvider
         $summaryProjector = app(\App\Projections\PatientSummaryProjector::class);
         $billingTimelineProjector = app(\App\Projections\BillingTimelineProjector::class);
         $auditTrailProjector = app(\App\Projections\AuditTrailProjector::class);
+        $clinicalVisitProjector = app(\App\Projections\ClinicalVisitProjector::class);
+        $clinicalTreatmentProjector = app(\App\Projections\ClinicalTreatmentProjector::class);
 
         // Patient Timeline Projection
         Event::listen(\App\Events\CRM\PatientCreated::class, [$timelineProjector, 'handlePatientCreated']);
@@ -113,5 +115,9 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(\App\Events\Platform\RateLimited::class, [$auditTrailProjector, 'handleRateLimited']);
         Event::listen(\App\Events\Platform\IdempotencyReplayed::class, [$auditTrailProjector, 'handleIdempotencyReplayed']);
         Event::listen(\App\Events\Platform\IdempotencyConflict::class, [$auditTrailProjector, 'handleIdempotencyConflict']);
+
+        // Clinical Projections
+        Event::listen(\App\Events\Clinical\VisitRecorded::class, [$clinicalVisitProjector, 'handleVisitRecorded']);
+        Event::listen(\App\Events\Clinical\TreatmentRecorded::class, [$clinicalTreatmentProjector, 'handleTreatmentRecorded']);
     }
 }
