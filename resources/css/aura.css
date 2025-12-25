@@ -20,11 +20,11 @@ Decisiones clave:
   --aura-cyan-soft: rgba(34, 211, 238, 0.1);
   --aura-cyan-glow: rgba(34, 211, 238, 0.15);
   
-  /* Text (gris oscuro, no negro) */
-  --aura-text-primary: #1E293B;
-  --aura-text-base: #475569;
-  --aura-text-secondary: #64748B;
-  --aura-text-muted: #94A3B8;
+  /* Text (gris suave, nunca negro) */
+  --aura-text-primary: #64748B;      /* Títulos principales - gris suave */
+  --aura-text-base: #64748B;         /* Texto base - mismo tono que sidebar */
+  --aura-text-secondary: #64748B;    /* Texto secundario - mantiene coherencia */
+  --aura-text-muted: #94A3B8;        /* Metadatos/fechas - gris claro */
   
   /* Borders */
   --aura-border-base: #E2E8F0;
