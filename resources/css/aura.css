@@ -529,19 +529,55 @@ body {
 
 /* Summary */
 .aura-summary {
-  background: var(--aura-bg-surface);
-  border: 1px solid var(--aura-border-base);
+  background: #ffffff;
+  border: 1px solid var(--aura-border-light);
   border-radius: var(--aura-radius-md);
+  margin-bottom: var(--aura-space-6);
+  transition: all var(--aura-duration) var(--aura-ease);
+}
+
+.aura-summary:hover {
+  border-color: var(--aura-cyan);
+}
+
+.aura-summary[open] {
+  border-color: var(--aura-cyan);
+  background: #ffffff;
+}
+
+.aura-summary-toggle {
+  cursor: pointer;
+  list-style: none;
   padding: var(--aura-space-6);
+  transition: background var(--aura-duration) var(--aura-ease);
+}
+
+.aura-summary-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.aura-summary-toggle:hover {
+  background: var(--aura-bg-hover);
 }
 
 .aura-summary-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--aura-space-5);
-  padding-bottom: var(--aura-space-4);
-  border-bottom: 1px solid var(--aura-border-light);
+  position: relative;
+}
+
+.aura-summary-header::after {
+  content: '▾';
+  color: var(--aura-text-muted);
+  font-size: var(--aura-text-base);
+  transition: transform var(--aura-duration) var(--aura-ease);
+  flex-shrink: 0;
+  margin-left: var(--aura-space-3);
+}
+
+.aura-summary[open] .aura-summary-header::after {
+  transform: rotate(180deg);
 }
 
 .aura-summary-title {
@@ -560,6 +596,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--aura-space-4);
+  margin-top: var(--aura-space-5);
 }
 
 .aura-summary-card {
@@ -696,16 +733,18 @@ body {
 .aura-billing-item {
   display: flex;
   gap: var(--aura-space-3);
-  padding: var(--aura-space-3);
+  background: var(--aura-bg-base);
+  border: 1px solid var(--aura-border-light);
   border-radius: var(--aura-radius-sm);
-  transition: background var(--aura-duration) var(--aura-ease);
+  transition: all var(--aura-duration) var(--aura-ease);
 }
 
 .aura-billing-item:hover {
-  background: var(--aura-bg-hover);
+  border-color: var(--aura-cyan);
 }
 
 .aura-billing-marker {
+  display: none;  /* FASE 17: Oculto para igualar con Clinical Visits */
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -716,14 +755,20 @@ body {
 
 .aura-billing-content {
   flex: 1;
+  padding: var(--aura-space-4);
+  transition: background var(--aura-duration) var(--aura-ease);
+}
+
+.aura-billing-content:hover {
+  background: var(--aura-bg-hover);
 }
 
 .aura-billing-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  gap: var(--aura-space-3);
-  margin-bottom: var(--aura-space-2);
+  gap: var(--aura-space-4);
+  flex-wrap: wrap;
 }
 
 .aura-billing-event-wrapper {
@@ -747,7 +792,9 @@ body {
 
 .aura-billing-date {
   font-size: var(--aura-text-sm);
+  font-weight: var(--aura-font-medium);
   color: var(--aura-text-muted);
+  font-family: 'Courier New', monospace;
   white-space: nowrap;
 }
 
@@ -894,7 +941,25 @@ body {
   align-items: center;
   gap: var(--aura-space-3);
   flex-wrap: wrap;
-  margin-bottom: var(--aura-space-2);
+  position: relative;
+}
+
+.aura-visit-header::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--aura-text-muted);
+  font-size: var(--aura-text-sm);
+  transition: transform var(--aura-duration) var(--aura-ease);
+  flex-shrink: 0;
+}
+
+.aura-visit-item[open] .aura-visit-header::after {
+  transform: rotate(180deg);
+}
+
+.aura-visit-summary-text {
+  font-size: var(--aura-text-sm);
+  color: var(--aura-text-secondary);
 }
 
 .aura-visit-date {

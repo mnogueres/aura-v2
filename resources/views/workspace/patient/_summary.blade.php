@@ -1,8 +1,10 @@
-<div class="aura-summary">
-    <div class="aura-summary-header">
-        <h2 class="aura-summary-title">Resumen del Paciente</h2>
-        <div class="aura-summary-id">ID: {{ $summary['patient_id'] }}</div>
-    </div>
+<details class="aura-summary">
+    <summary class="aura-summary-toggle">
+        <div class="aura-summary-header">
+            <h2 class="aura-summary-title">Resumen del Paciente</h2>
+            <div class="aura-summary-id">ID: {{ $summary['patient_id'] }}</div>
+        </div>
+    </summary>
 
     <div class="aura-summary-grid">
         <div class="aura-summary-card">
@@ -35,4 +37,4 @@
         <span class="aura-summary-meta">Última actividad: {{ \Carbon\Carbon::parse($summary['last_activity_at'])->format('d/m/Y H:i') }}</span>
     </div>
     @endif
-</div>
+</details>

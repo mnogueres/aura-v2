@@ -37,15 +37,30 @@ class PatientWorkspaceController extends Controller
         // Fetch patient summary
         $summary = $this->summaryRepository->getByPatient($clinicId, $patientId);
 
-        // Fetch clinical visits (FASE 17)
-        $clinicalVisits = $this->clinicalVisitRepository->getVisitsForPatient($clinicId, $patientId);
+        // Fetch clinical visits with pagination (FASE 17+)
+        $visitsPage = $request->query('visits_page', 1);
+        $visitsPaginator = $this->clinicalVisitRepository->getVisitsForPatientPaginated(
+            $clinicId,
+            $patientId,
+            8,  // per page
+            $visitsPage
+        );
+
+        $clinicalVisits = $visitsPaginator->items();
+        $visitsMeta = [
+            'current_page' => $visitsPaginator->currentPage(),
+            'last_page' => $visitsPaginator->lastPage(),
+            'per_page' => $visitsPaginator->perPage(),
+            'total' => $visitsPaginator->total(),
+        ];
 
         // Load treatments for each visit
         foreach ($clinicalVisits as $visit) {
             $visit->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($visit->id);
         }
 
-        // Fetch patient timeline (with pagination)
+        // FASE 17: Timeline técnico no se muestra en Workspace (código preservado)
+        /*
         $timelinePage = $request->query('timeline_page', 1);
         $timelineQuery = PatientTimeline::where('clinic_id', $clinicId)
             ->where('patient_id', $patientId)
@@ -59,6 +74,11 @@ class PatientWorkspaceController extends Controller
             'per_page' => $timelinePaginator->perPage(),
             'total' => $timelinePaginator->total(),
         ];
+        */
+
+        // Defaults vacíos para evitar errores de vista
+        $timeline = [];
+        $timelineMeta = ['current_page' => 1, 'last_page' => 1, 'per_page' => 25, 'total' => 0];
 
         // Fetch billing timeline (with pagination)
         $billingPage = $request->query('billing_page', 1);
@@ -66,7 +86,7 @@ class PatientWorkspaceController extends Controller
             ->where('patient_id', $patientId)
             ->orderBy('occurred_at');
 
-        $billingPaginator = $billingQuery->paginate(25, ['*'], 'billing_page', $billingPage);
+        $billingPaginator = $billingQuery->paginate(8, ['*'], 'billing_page', $billingPage);
         $billing = $billingPaginator->items();
         $billingMeta = [
             'current_page' => $billingPaginator->currentPage(),
@@ -80,6 +100,7 @@ class PatientWorkspaceController extends Controller
             'patientId',
             'summary',
             'clinicalVisits',
+            'visitsMeta',
             'timeline',
             'timelineMeta',
             'billing',

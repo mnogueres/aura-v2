@@ -20,18 +20,19 @@
         'clinicalVisits' => $clinicalVisits
     ])
 
-    <div class="aura-workspace-timelines">
-        @include('workspace.patient._timeline', [
-            'timeline' => $timeline,
-            'timelineMeta' => $timelineMeta,
-            'patientId' => $patientId
-        ])
+    {{-- FASE 17: Timeline técnico oculto (código preservado para referencia)
+    @include('workspace.patient._timeline', [
+        'timeline' => $timeline,
+        'timelineMeta' => $timelineMeta,
+        'patientId' => $patientId
+    ])
+    --}}
 
-        @include('workspace.patient._billing', [
-            'billing' => $billing,
-            'billingMeta' => $billingMeta,
-            'patientId' => $patientId
-        ])
-    </div>
+    {{-- FASE 17: Billing Timeline ahora va full-width, sin wrapper grid --}}
+    @include('workspace.patient._billing', [
+        'billing' => $billing,
+        'billingMeta' => $billingMeta,
+        'patientId' => $patientId
+    ])
 </div>
 @endsection

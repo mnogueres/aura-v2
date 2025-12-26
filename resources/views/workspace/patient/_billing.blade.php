@@ -8,15 +8,13 @@
                 <div class="aura-billing-marker"></div>
                 <div class="aura-billing-content">
                     <div class="aura-billing-header">
+                        <span class="aura-billing-date">
+                            {{ \Carbon\Carbon::parse($event['occurred_at'])->format('d M Y, H:i') }}
+                        </span>
                         <div class="aura-billing-event-wrapper">
                             <span class="aura-billing-icon">{!! \App\Helpers\EventHumanizer::getIcon($event['event_name']) !!}</span>
                             <span class="aura-billing-event">{{ \App\Helpers\EventHumanizer::humanize($event['event_name']) }}</span>
                         </div>
-                        <span class="aura-billing-date">
-                            {{ \Carbon\Carbon::parse($event['occurred_at'])->format('d/m/Y H:i') }}
-                        </span>
-                    </div>
-                    <div class="aura-billing-details">
                         @if(isset($event['amount']))
                             <span class="aura-billing-amount">{{ number_format($event['amount'], 2) }} {{ $event['currency'] ?? 'EUR' }}</span>
                         @endif

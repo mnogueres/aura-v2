@@ -2,7 +2,7 @@
 <div class="aura-timeline-block">
     <h2 class="aura-block-title">Historial de Visitas</h2>
 
-    @if($clinicalVisits->isEmpty())
+    @if(empty($clinicalVisits))
         {{-- Ejemplos clínicos (solo cuando no hay visitas reales) --}}
         <div class="aura-visits-list">
             <details class="aura-visit-item aura-visit-example">
@@ -12,8 +12,8 @@
                         <span class="aura-visit-professional">Visita con Dr. García</span>
                         <span class="aura-visit-badge">2 tratamientos</span>
                         <span class="aura-example-badge">Ejemplo</span>
+                        <span class="aura-visit-summary-text">Paciente refiere dolor en molar inferior derecho</span>
                     </div>
-                    <p class="aura-visit-summary-text">Paciente refiere dolor en molar inferior derecho</p>
                 </summary>
 
                 <div class="aura-visit-details">
@@ -38,8 +38,8 @@
                         <span class="aura-visit-date">28 nov 2024, 16:00</span>
                         <span class="aura-visit-professional">Visita con Dra. Pérez</span>
                         <span class="aura-example-badge">Ejemplo</span>
+                        <span class="aura-visit-summary-text">Revisión anual preventiva</span>
                     </div>
-                    <p class="aura-visit-summary-text">Revisión anual preventiva</p>
                 </summary>
 
                 <div class="aura-visit-details">
@@ -64,10 +64,10 @@
                                     {{ $visit->treatments_count }} {{ $visit->treatments_count === 1 ? 'tratamiento' : 'tratamientos' }}
                                 </span>
                             @endif
+                            @if($visit->summary)
+                                <span class="aura-visit-summary-text">{{ $visit->summary }}</span>
+                            @endif
                         </div>
-                        @if($visit->summary)
-                            <p class="aura-visit-summary-text">{{ $visit->summary }}</p>
-                        @endif
                     </summary>
 
                     <div class="aura-visit-details">
@@ -96,5 +96,25 @@
                 </details>
             @endforeach
         </div>
+
+        @if($visitsMeta && $visitsMeta['last_page'] > 1)
+        <div class="aura-pagination">
+            <a
+                href="{{ route('workspace.patient.show', ['patient' => $patientId, 'visits_page' => max(1, $visitsMeta['current_page'] - 1)]) }}"
+                class="aura-pagination-btn {{ $visitsMeta['current_page'] <= 1 ? 'disabled' : '' }}">
+                Anterior
+            </a>
+
+            <div class="aura-pagination-info">
+                Página {{ $visitsMeta['current_page'] }} de {{ $visitsMeta['last_page'] }}
+            </div>
+
+            <a
+                href="{{ route('workspace.patient.show', ['patient' => $patientId, 'visits_page' => min($visitsMeta['last_page'], $visitsMeta['current_page'] + 1)]) }}"
+                class="aura-pagination-btn {{ $visitsMeta['current_page'] >= $visitsMeta['last_page'] ? 'disabled' : '' }}">
+                Siguiente
+            </a>
+        </div>
+        @endif
     @endif
 </div>
