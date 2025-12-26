@@ -48,7 +48,7 @@
         @endif
     @else
         <div class="aura-empty-state">
-            <p>No hay eventos de facturación</p>
+            <p>No hay facturación asociada a este paciente.</p>
         </div>
     @endif
 </div>

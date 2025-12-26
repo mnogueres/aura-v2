@@ -29,7 +29,8 @@
     <!-- Listado -->
     <div class="aura-patient-list">
         <template x-for="patient in filteredPatients" :key="patient.id">
-            <div
+            <a
+                :href="`/workspace/patients/${patient.id}`"
                 class="aura-patient-item"
                 x-show="true"
                 x-transition:enter="transition ease-out duration-300"
@@ -43,7 +44,7 @@
                     class="aura-patient-status"
                     :class="patient.status === 'Activo' ? 'active' : 'inactive'"
                     x-text="patient.status"></span>
-            </div>
+            </a>
         </template>
     </div>
 </div>
