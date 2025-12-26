@@ -181,6 +181,91 @@ Definir el modelo clínico conceptual respondiendo:
 
 ---
 
+## FASE 17 — Implementación Modelo Clínico (Read-Only)
+
+Estado: ✅ COMPLETADA
+
+### 17.1 — Tablas y Modelos
+Estado: ✅ COMPLETADA
+- Migration clinical_visits (occurred_at, professional_name, summary)
+- Migration clinical_treatments (type, tooth, amount, notes)
+- Modelos Eloquent ClinicalVisit y ClinicalTreatment
+- Relación hasMany: visit → treatments
+
+### 17.2 — Repository Pattern
+Estado: ✅ COMPLETADA
+- ClinicalVisitRepository: consultas ordenadas por fecha
+- ClinicalTreatmentRepository: agrupación por visita
+- Paginación soportada
+
+### 17.3 — Workspace UI Clínico
+Estado: ✅ COMPLETADA
+- Timeline clínico humanizado en Workspace
+- Vista colapsable tipo <details>
+- Sin eventos técnicos, solo información clínica
+- Estados vacíos implementados
+
+---
+
+## FASE 18 — Validación con Datos Reales
+
+Estado: ✅ COMPLETADA
+
+### 18.1 — ValidationSeeder
+Estado: ✅ COMPLETADA
+- 3 pacientes de prueba (alta/media/baja carga)
+- Ana: 18 visitas, 14 facturas
+- Luis: 2 visitas, 1 factura
+- Carmen: 0 visitas, 0 facturación
+
+### 18.2 — Walkthroughs
+Estado: ✅ COMPLETADA
+- Documentación VALIDATION.md con escenarios
+- Validación UX desde 3 perspectivas (Auxiliar, Profesional, Contable)
+- Observaciones de fricción documentadas
+
+---
+
+## FASE 19 — Producto Vivo (Live Product)
+
+Estado: ✅ COMPLETADA
+
+### 19.0 — Principios fundamentales
+Estado: ✅ COMPLETADA
+- Documentación PRODUCT_LIVE.md creada
+- Eliminación de ejemplos visuales ficticios
+- Estados vacíos como ciudadanos de primera clase
+- "Si no hay datos reales, no se inventan"
+
+### 19.1 — Paginación sin recarga (HTMX)
+Estado: ✅ COMPLETADA
+
+**Problema resuelto:**
+- Paginación con recarga completa causa scroll jump
+- Usuario pierde contexto al paginar timelines
+
+**Implementación:**
+- HTMX (14kb) añadido al layout Aura
+- Vistas parciales para contenido actualizable:
+  - `partials/_billing_content.blade.php`
+  - `partials/_visits_content.blade.php`
+- Controller detecta `?partial=billing/visits` y devuelve solo HTML del bloque
+- Botones con `hx-get`, `hx-target`, `hx-swap`
+
+**Características:**
+- ✅ Sin recarga de página completa
+- ✅ Scroll no se mueve
+- ✅ Solo actualiza el bloque correspondiente
+- ✅ Blade sigue siendo fuente de markup
+- ✅ No SPA, no frameworks pesados
+- ✅ Loading states automáticos (htmx-request)
+
+**Resultado:** Paginación fluida como SPA, sin ser SPA.
+
+**Tecnología:** HTMX declarativo (HTML attributes, no JS custom)
+
+---
+
 ## API v1 — Congelación de contrato
 
 **Fecha:** 2025-12-25

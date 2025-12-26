@@ -2,7 +2,7 @@
 
 ## Última sesión
 Fecha: 2025-12-26
-Estado: FASE 17 completada - Workspace UX refinado
+Estado: FASE 19.1 completada - Paginación sin recarga con HTMX
 
 ## Arquitectura validada
 - Multi-tenant por clinic_id (ClinicScope global)
@@ -20,6 +20,8 @@ Estado: FASE 17 completada - Workspace UX refinado
 - FASE 11.1: Error handling centralizado (422, 403, 404, 429)
 - FASE 11.2: Rate limiting inteligente (user + clinic + IP)
 - FASE 11.3: Idempotencia (Idempotency-Key en POST, TTL 24h)
+- FASE 12: OpenAPI specification (docs/openapi/openapi.yaml)
+- FASE 12.x: Swagger UI integration (dev-only)
 - FASE 13.1: Taxonomía de eventos de dominio (10 eventos)
 - FASE 13.2: Event classes (CRM, Billing, Platform)
 - FASE 13.3: EventService + emisión post-commit
@@ -32,10 +34,11 @@ Estado: FASE 17 completada - Workspace UX refinado
 - FASE 15.1: Workspace API endpoints (summary, timeline, billing, audit)
 - FASE 15.2: Workspace controllers + repositories
 - FASE 15.3: Workspace UI integration con Aura design system
-- FASE 12: OpenAPI specification (docs/openapi/openapi.yaml)
-- FASE 12.x: Swagger UI integration (dev-only)
 - FASE 16: Clinical Model design (modelo clínico read-only, visitas + tratamientos)
-- FASE 17: Workspace UX refinement (timeline técnico oculto, visual coherence, paginación)
+- FASE 17: Clinical Model implementation (tablas, modelos, repositories, UI)
+- FASE 18: Validation con datos reales (ValidationSeeder, walkthroughs)
+- FASE 19: Producto Vivo (eliminación ejemplos, estados vacíos, datos reales exclusivamente)
+- FASE 19.1: Paginación sin recarga (HTMX, sin scroll jump, interacción fluida)
 
 ## Rate limits activos
 - api-read: 120/min
@@ -74,42 +77,85 @@ API v1 está congelada como contrato estable:
 - OpenAPI spec: `docs/openapi/openapi.yaml`
 - Swagger UI: `http://localhost:8000/docs/api` (dev-only)
 
-## FASE 17 — Workspace UX Refinement
+## FASE 19 — Producto Vivo (Live Product)
 **Fecha:** 2025-12-26
+**Estado:** ✅ COMPLETADA
 
-### Objetivos cumplidos
-1. **Timeline técnico oculto:** Patient Timeline (eventos CRM) ya no se muestra en el Workspace del paciente
-2. **Visual coherence:** Unificación completa del diseño entre Clinical Visits y Billing Timeline
-3. **Paginación:** Ambos timelines ahora paginan a 8 items por página
-4. **Hover canónico:** Efecto de borde "abierto en las esquinas" en ambos timelines
+### Principios fundamentales
+- Documentación `PRODUCT_LIVE.md` creada
+- **Regla de oro:** "Si no hay datos reales, no se inventan"
+- Estados vacíos son ciudadanos de primera clase, no errores
+- Workspace refleja exactamente lo que hay en la base de datos
+- Sin ejemplos visuales ficticios, sin simulaciones, sin modo demo
 
 ### Cambios implementados
 
-**Controllers:**
-- `PatientWorkspaceController`: Timeline técnico comentado (código preservado), paginación añadida a clinical visits (8/página)
+**Filosofía:**
+- Eliminados todos los ejemplos visuales del Workspace
+- Estados vacíos humanizados ("Este paciente aún no tiene visitas...")
+- PatientController: consulta BD real, no datos hardcoded
+- Sidebar Aura: sin simulación de auth, solo contexto de clínica
 
-**Repositories:**
-- `ClinicalVisitRepository`: Nuevo método `getVisitsForPatientPaginated()`
+**Navegación:**
+- Flujo establecido: Dashboard → Pacientes → Workspace
+- Workspace como destino específico, no landing page
+- Read-only coherente (sin botones de acción/escritura)
 
-**Views:**
-- `workspace/patient/show.blade.php`: Timeline técnico comentado, billing full-width
-- `workspace/patient/_clinical_visits.blade.php`: Summary inline, paginación añadida
-- `workspace/patient/_billing.blade.php`: Fecha monospace primero, elementos reordenados
+### FASE 19.1 — Paginación sin recarga (HTMX)
+**Fecha:** 2025-12-26
+**Estado:** ✅ COMPLETADA
 
-**CSS (aura.css):**
-- Billing marker oculto (`display: none`)
-- Padding movido de `.aura-billing-item` a `.aura-billing-content`
-- Hover background en `.aura-billing-content` (igual que `.aura-visit-summary`)
-- Fecha billing: monospace, formato 'd M Y, H:i'
-- Efecto hover idéntico en ambos timelines (border cyan, background interno)
+### Problema resuelto
+- Paginación con recarga completa causaba scroll jump
+- Usuario perdía contexto al paginar timelines
+- Experiencia disruptiva al navegar entre páginas
+
+### Implementación
+
+**Tecnología añadida:**
+- HTMX (14kb) vía CDN en layout Aura
+- Declarativo: HTML attributes, no JS custom
+
+**Vistas parciales creadas:**
+- `partials/_billing_content.blade.php`: contenido actualizable de billing timeline
+- `partials/_visits_content.blade.php`: contenido actualizable de clinical visits
+
+**Controller mejorado:**
+- `PatientWorkspaceController`: detecta `?partial=billing/visits`
+- Devuelve solo HTML del bloque (sin layout completo)
+- Reutiliza mismos endpoints, misma lógica
+
+**Botones de paginación:**
+- Atributos HTMX: `hx-get`, `hx-target="#billing-content"`, `hx-swap="innerHTML"`
+- Loading state automático (`.htmx-request` con opacity 0.6)
+- Disabled states durante carga
+
+### Características logradas
+- ✅ **Sin recarga de página completa**
+- ✅ **Scroll no se mueve** (usuario mantiene contexto)
+- ✅ **Solo actualiza el bloque correspondiente**
+- ✅ **Blade sigue siendo fuente de markup** (no SPA)
+- ✅ **No frameworks pesados** (HTMX es 14kb)
+- ✅ **Interacción fluida** sin pérdida de foco
 
 ### Resultado
-Workspace del paciente ahora muestra:
-- **Clinical Visits:** Historial de visitas clínicas con tratamientos (paginado, 8/página)
-- **Billing Timeline:** Timeline financiero (paginado, 8/página)
-- **Visual coherence:** Ambos timelines con diseño idéntico y hover "canónico"
+**Experiencia:** Paginación tan fluida como una SPA, pero sin ser una SPA.
 
-Timeline técnico (eventos CRM) removido de la vista pero código preservado para referencia futura.
+**Arquitectura preservada:**
+- Server-side rendering intacto
+- Blade templates como fuente de verdad
+- Controller decide qué renderizar
+- No complejidad en frontend
+
+### Workspace actual
+El Workspace del paciente muestra:
+- **Resumen:** Contadores y totales (invoices, payments, amounts)
+- **Clinical Visits:** Historial de visitas clínicas con tratamientos (paginado, 8/página)
+- **Billing Timeline:** Timeline financiero con eventos (paginado, 8/página)
+- **Paginación local:** Sin recarga, sin scroll jump, interacción fluida
+
+**Estados vacíos:** Mensajes claros y humanos cuando no hay datos
+**Datos reales:** Solo información de base de datos, sin ejemplos ficticios
 
 ## Próxima fase prevista
 Pendiente de definición por el usuario
