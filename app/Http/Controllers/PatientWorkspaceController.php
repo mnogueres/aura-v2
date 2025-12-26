@@ -95,6 +95,28 @@ class PatientWorkspaceController extends Controller
             'total' => $billingPaginator->total(),
         ];
 
+        // FASE 19.1: Si es petición parcial (HTMX), devolver solo el contenido
+        if ($request->has('partial')) {
+            $partial = $request->get('partial');
+
+            if ($partial === 'billing') {
+                return view('workspace.patient.partials._billing_content', compact(
+                    'billing',
+                    'billingMeta',
+                    'patientId'
+                ));
+            }
+
+            if ($partial === 'visits') {
+                return view('workspace.patient.partials._visits_content', compact(
+                    'clinicalVisits',
+                    'visitsMeta',
+                    'patientId'
+                ));
+            }
+        }
+
+        // Vista completa normal
         return view('workspace.patient.show', compact(
             'patient',
             'patientId',

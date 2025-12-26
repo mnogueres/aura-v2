@@ -7,6 +7,10 @@ Decisiones clave:
 - Mobile superficie total
 */
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   /* Backgrounds */
   --aura-bg-base: #F8FAFB;
@@ -370,18 +374,27 @@ body {
   border-radius: var(--aura-radius-sm);
   background: var(--aura-bg-surface);
   transition: all var(--aura-duration) var(--aura-ease);
+  cursor: pointer;
+  font-family: inherit;
 }
 
-.aura-pagination-btn:hover:not(.disabled) {
+.aura-pagination-btn:hover:not(.disabled):not(:disabled) {
   border-color: var(--aura-cyan);
   color: var(--aura-text-base);
   transform: translateY(-1px);
 }
 
-.aura-pagination-btn.disabled {
+.aura-pagination-btn.disabled,
+.aura-pagination-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* HTMX loading state (FASE 19.1) */
+.aura-pagination-btn.htmx-request {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .aura-pagination-pages {
@@ -957,11 +970,6 @@ body {
   transform: rotate(180deg);
 }
 
-.aura-visit-summary-text {
-  font-size: var(--aura-text-sm);
-  color: var(--aura-text-secondary);
-}
-
 .aura-visit-date {
   font-size: var(--aura-text-sm);
   font-weight: var(--aura-font-medium);
@@ -1078,4 +1086,98 @@ body {
 
 .aura-visit-example {
   opacity: 0.85;
+}
+
+/* ============================================================
+   CLINIC CONTEXT (FASE 19 - Read-Only)
+   ============================================================ */
+
+.aura-clinic-context {
+  display: flex;
+  align-items: center;
+  gap: var(--aura-space-3);
+}
+
+.aura-clinic-name {
+  font-size: var(--aura-text-sm);
+  color: var(--aura-text-muted);
+  font-weight: var(--aura-font-medium);
+}
+
+/* ============================================================
+   DASHBOARD (FASE 19+)
+   ============================================================ */
+
+.aura-dashboard-welcome {
+  max-width: 800px;
+}
+
+.aura-welcome-title {
+  font-size: var(--aura-text-2xl);
+  font-weight: var(--aura-font-semibold);
+  color: var(--aura-text-primary);
+  margin-bottom: var(--aura-space-2);
+}
+
+.aura-welcome-text {
+  font-size: var(--aura-text-base);
+  color: var(--aura-text-muted);
+  margin-bottom: var(--aura-space-6);
+}
+
+.aura-dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--aura-space-5);
+}
+
+.aura-card {
+  background: var(--aura-bg-surface);
+  border: 1px solid var(--aura-border-light);
+  border-radius: var(--aura-radius-md);
+  padding: var(--aura-space-5);
+  text-decoration: none;
+  display: block;
+  transition: all var(--aura-duration) var(--aura-ease);
+}
+
+.aura-card:hover {
+  border-color: var(--aura-cyan);
+  box-shadow: var(--aura-shadow-md);
+  transform: translateY(-2px);
+}
+
+.aura-card-muted:hover {
+  border-color: var(--aura-border-base);
+  transform: translateY(-1px);
+}
+
+.aura-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--aura-space-3);
+}
+
+.aura-card-title {
+  font-size: var(--aura-text-lg);
+  font-weight: var(--aura-font-semibold);
+  color: var(--aura-text-primary);
+}
+
+.aura-card-arrow {
+  font-size: var(--aura-text-xl);
+  color: var(--aura-cyan);
+  transition: transform var(--aura-duration) var(--aura-ease);
+}
+
+.aura-card:hover .aura-card-arrow {
+  transform: translateX(4px);
+}
+
+.aura-card-text {
+  font-size: var(--aura-text-base);
+  color: var(--aura-text-secondary);
+  line-height: 1.5;
+  margin: 0;
 }
