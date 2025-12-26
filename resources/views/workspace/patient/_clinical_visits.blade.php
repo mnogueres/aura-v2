@@ -3,6 +3,11 @@
     <h2 class="aura-block-title">Historial de Visitas</h2>
 
     @if(empty($clinicalVisits))
+        {{-- Mensaje cuando no hay visitas --}}
+        <div class="aura-empty-state">
+            <p>Este paciente aún no tiene visitas clínicas registradas.</p>
+        </div>
+
         {{-- Ejemplos clínicos (solo cuando no hay visitas reales) --}}
         <div class="aura-visits-list">
             <details class="aura-visit-item aura-visit-example">
@@ -43,7 +48,7 @@
                 </summary>
 
                 <div class="aura-visit-details">
-                    <p class="aura-no-treatments">Visita sin tratamientos (revisión o valoración)</p>
+                    <p class="aura-no-treatments">Revisión sin tratamientos realizados</p>
                 </div>
             </details>
         </div>
@@ -90,7 +95,7 @@
                                 @endforeach
                             </ul>
                         @else
-                            <p class="aura-no-treatments">Visita sin tratamientos (revisión o valoración)</p>
+                            <p class="aura-no-treatments">Revisión sin tratamientos realizados</p>
                         @endif
                     </div>
                 </details>
