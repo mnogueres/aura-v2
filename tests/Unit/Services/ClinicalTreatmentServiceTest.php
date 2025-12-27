@@ -175,4 +175,160 @@ class ClinicalTreatmentServiceTest extends TestCase
             'tooth' => '38',
         ]);
     }
+
+    // FASE 20.4: Tests for updateTreatment
+
+    public function test_updates_treatment_successfully(): void
+    {
+        $treatment = $this->service->addTreatmentToVisit($this->visit->id, [
+            'type' => 'Empaste',
+            'tooth' => '16',
+            'amount' => '65.00',
+            'notes' => 'Original notes',
+        ]);
+
+        $updated = $this->service->updateTreatment($treatment->id, [
+            'type' => 'Endodoncia',
+            'amount' => '150.00',
+        ]);
+
+        $this->assertEquals('Endodoncia', $updated->type);
+        $this->assertEquals('150.00', $updated->amount);
+        $this->assertEquals('16', $updated->tooth); // not updated
+        $this->assertEquals('Original notes', $updated->notes); // not updated
+    }
+
+    public function test_update_emits_treatment_updated_event(): void
+    {
+        $treatment = $this->service->addTreatmentToVisit($this->visit->id, [
+            'type' => 'Empaste',
+        ]);
+
+        $this->service->updateTreatment($treatment->id, [
+            'type' => 'Empaste mejorado',
+        ]);
+
+        $this->assertDatabaseHas('event_outbox', [
+            'event_name' => 'clinical.treatment.updated',
+        ]);
+    }
+
+    public function test_update_requires_type_not_empty(): void
+    {
+        $treatment = $this->service->addTreatmentToVisit($this->visit->id, [
+            'type' => 'Empaste',
+        ]);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('type cannot be empty');
+
+        $this->service->updateTreatment($treatment->id, [
+            'type' => '',
+        ]);
+    }
+
+    public function test_update_validates_amount_is_numeric(): void
+    {
+        $treatment = $this->service->addTreatmentToVisit($this->visit->id, [
+            'type' => 'Empaste',
+        ]);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('amount must be numeric');
+
+        $this->service->updateTreatment($treatment->id, [
+            'amount' => 'not-a-number',
+        ]);
+    }
+
+    public function test_update_validates_amount_is_positive_or_zero(): void
+    {
+        $treatment = $this->service->addTreatmentToVisit($this->visit->id, [
+            'type' => 'Empaste',
+        ]);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('amount must be positive or zero');
+
+        $this->service->updateTreatment($treatment->id, [
+            'amount' => '-50',
+        ]);
+    }
+
+    public function test_update_throws_exception_for_nonexistent_treatment(): void
+    {
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Treatment not found');
+
+        $this->service->updateTreatment('non-existent-uuid', [
+            'type' => 'Empaste',
+        ]);
+    }
+
+    public function test_update_throws_exception_for_soft_deleted_treatment(): void
+    {
+        $treatment = $this->service->addTreatmentToVisit($this->visit->id, [
+            'type' => 'Empaste',
+        ]);
+
+        $treatment->delete(); // soft delete
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Cannot update deleted treatment');
+
+        $this->service->updateTreatment($treatment->id, [
+            'type' => 'Endodoncia',
+        ]);
+    }
+
+    // FASE 20.4: Tests for removeTreatmentFromVisit
+
+    public function test_removes_treatment_successfully(): void
+    {
+        $treatment = $this->service->addTreatmentToVisit($this->visit->id, [
+            'type' => 'Empaste',
+        ]);
+
+        $this->service->removeTreatmentFromVisit($treatment->id);
+
+        // Verify soft deleted in write model
+        $this->assertSoftDeleted('visit_treatments', [
+            'id' => $treatment->id,
+        ]);
+    }
+
+    public function test_remove_emits_treatment_removed_event(): void
+    {
+        $treatment = $this->service->addTreatmentToVisit($this->visit->id, [
+            'type' => 'Empaste',
+        ]);
+
+        $this->service->removeTreatmentFromVisit($treatment->id);
+
+        $this->assertDatabaseHas('event_outbox', [
+            'event_name' => 'clinical.treatment.removed',
+        ]);
+    }
+
+    public function test_remove_throws_exception_for_nonexistent_treatment(): void
+    {
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Treatment not found');
+
+        $this->service->removeTreatmentFromVisit('non-existent-uuid');
+    }
+
+    public function test_remove_throws_exception_for_already_deleted_treatment(): void
+    {
+        $treatment = $this->service->addTreatmentToVisit($this->visit->id, [
+            'type' => 'Empaste',
+        ]);
+
+        $treatment->delete(); // soft delete
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Treatment already deleted');
+
+        $this->service->removeTreatmentFromVisit($treatment->id);
+    }
 }

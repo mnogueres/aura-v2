@@ -167,6 +167,8 @@ class OutboxEventConsumer
             'clinical.visit.recorded' => $this->dispatchToVisitProjector($outboxEvent),
             'clinical.treatment.recorded' => $this->dispatchToTreatmentProjector($outboxEvent),
             'clinical.treatment.added' => $this->dispatchToTreatmentAddedProjector($outboxEvent),
+            'clinical.treatment.updated' => $this->dispatchToTreatmentUpdatedProjector($outboxEvent),
+            'clinical.treatment.removed' => $this->dispatchToTreatmentRemovedProjector($outboxEvent),
             'billing.invoice.created', 'billing.invoice.issued', 'billing.invoice.paid' =>
                 $this->dispatchToBillingProjectors($outboxEvent),
             'billing.payment.recorded', 'billing.payment.applied', 'billing.payment.unlinked' =>
@@ -206,6 +208,24 @@ class OutboxEventConsumer
     {
         $event = $this->rehydrateTreatmentAdded($outboxEvent);
         app(\App\Projections\ClinicalTreatmentProjector::class)->handleTreatmentAdded($event);
+    }
+
+    /**
+     * Dispatch clinical.treatment.updated to projector (CANONICAL flow - FASE 20.4).
+     */
+    private function dispatchToTreatmentUpdatedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateTreatmentUpdated($outboxEvent);
+        app(\App\Projections\ClinicalTreatmentProjector::class)->handleTreatmentUpdated($event);
+    }
+
+    /**
+     * Dispatch clinical.treatment.removed to projector (CANONICAL flow - FASE 20.4).
+     */
+    private function dispatchToTreatmentRemovedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateTreatmentRemoved($outboxEvent);
+        app(\App\Projections\ClinicalTreatmentProjector::class)->handleTreatmentRemoved($event);
     }
 
     /**
@@ -298,6 +318,44 @@ class OutboxEventConsumer
             tooth: $p['tooth'] ?? null,
             amount: $p['amount'] ?? null,
             notes: $p['notes'] ?? null,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate TreatmentUpdated event from outbox (CANONICAL flow - FASE 20.4).
+     */
+    private function rehydrateTreatmentUpdated(EventOutbox $outboxEvent): \App\Events\Clinical\TreatmentUpdated
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\TreatmentUpdated(
+            clinic_id: $p['clinic_id'],
+            treatment_id: $p['treatment_id'],
+            visit_id: $p['visit_id'],
+            patient_id: $p['patient_id'],
+            type: $p['type'],
+            tooth: $p['tooth'] ?? null,
+            amount: $p['amount'] ?? null,
+            notes: $p['notes'] ?? null,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate TreatmentRemoved event from outbox (CANONICAL flow - FASE 20.4).
+     */
+    private function rehydrateTreatmentRemoved(EventOutbox $outboxEvent): \App\Events\Clinical\TreatmentRemoved
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\TreatmentRemoved(
+            clinic_id: $p['clinic_id'],
+            treatment_id: $p['treatment_id'],
+            visit_id: $p['visit_id'],
+            patient_id: $p['patient_id'],
             request_id: $outboxEvent->request_id,
             user_id: $outboxEvent->user_id
         );

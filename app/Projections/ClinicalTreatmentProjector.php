@@ -4,6 +4,8 @@ namespace App\Projections;
 
 use App\Events\Clinical\TreatmentRecorded;
 use App\Events\Clinical\TreatmentAdded;
+use App\Events\Clinical\TreatmentUpdated;
+use App\Events\Clinical\TreatmentRemoved;
 use App\Models\ClinicalTreatment;
 use App\Models\ClinicalVisit;
 
@@ -27,6 +29,48 @@ class ClinicalTreatmentProjector
         $this->incrementVisitTreatmentCount($event);
     }
 
+    /**
+     * Handle TreatmentUpdated (CANONICAL flow - FASE 20.4).
+     *
+     * Updates the projection with POST-update complete state.
+     * Does NOT modify treatments_count (same treatment).
+     */
+    public function handleTreatmentUpdated(TreatmentUpdated $event): void
+    {
+        $treatmentId = $event->payload['treatment_id'];
+
+        ClinicalTreatment::where('id', $treatmentId)
+            ->update([
+                'type' => $event->payload['type'],
+                'tooth' => $event->payload['tooth'],
+                'amount' => $event->payload['amount'],
+                'notes' => $event->payload['notes'],
+                'projected_at' => now(),
+            ]);
+    }
+
+    /**
+     * Handle TreatmentRemoved (CANONICAL flow - FASE 20.4).
+     *
+     * Hard deletes from read model and decrements treatments_count.
+     * Write model (VisitTreatment) is soft-deleted by service.
+     */
+    public function handleTreatmentRemoved(TreatmentRemoved $event): void
+    {
+        $treatmentId = $event->payload['treatment_id'];
+        $visitId = $event->payload['visit_id'];
+
+        // Hard delete from read model (no deleted_at in ClinicalTreatment)
+        ClinicalTreatment::where('id', $treatmentId)->delete();
+
+        // Decrement treatments_count
+        $visit = ClinicalVisit::find($visitId);
+
+        if ($visit && $visit->treatments_count > 0) {
+            $visit->decrement('treatments_count');
+        }
+    }
+
     private function projectTreatment(TreatmentRecorded|TreatmentAdded $event): void
     {
         $treatmentId = $event->payload['treatment_id'];
@@ -43,6 +87,7 @@ class ClinicalTreatmentProjector
                 'amount' => $event->payload['amount'],
                 'notes' => $event->payload['notes'],
                 'projected_at' => now(),
+                'created_at' => now(),
                 'source_event_id' => $event->request_id,
             ]
         );

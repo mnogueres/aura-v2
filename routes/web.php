@@ -25,6 +25,10 @@ Route::post('/workspace/patients/{patient}/visits', [App\Http\Controllers\Patien
     ->name('workspace.patient.visits.store');
 Route::post('/workspace/visits/{visit}/treatments', [App\Http\Controllers\PatientWorkspaceController::class, 'storeTreatment'])
     ->name('workspace.visit.treatments.store');
+Route::patch('/workspace/treatments/{treatment}', [App\Http\Controllers\PatientWorkspaceController::class, 'updateTreatment'])
+    ->name('workspace.treatments.update');
+Route::delete('/workspace/treatments/{treatment}', [App\Http\Controllers\PatientWorkspaceController::class, 'deleteTreatment'])
+    ->name('workspace.treatments.delete');
 
 // API Documentation (dev-only)
 Route::get('/docs/api', [App\Http\Controllers\SwaggerController::class, 'index'])

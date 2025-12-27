@@ -27,12 +27,14 @@ class ClinicalTreatment extends Model
         'amount',
         'notes',
         'projected_at',
+        'created_at',
         'source_event_id',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'projected_at' => 'datetime',
+        'created_at' => 'datetime',
     ];
 
     public function visit()

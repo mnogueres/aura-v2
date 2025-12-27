@@ -336,4 +336,378 @@ class PatientWorkspaceControllerTest extends TestCase
         $response->assertViewIs('workspace.patient.partials._visit_treatments');
         $response->assertViewHas('clinicalVisit');
     }
+
+    // FASE 20.4: Tests for updating treatments
+
+    public function test_updates_treatment_successfully(): void
+    {
+        // Create visit and treatment
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $treatment = \App\Models\VisitTreatment::create([
+            'visit_id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+            'tooth' => '16',
+            'amount' => '65.00',
+            'notes' => 'Original notes',
+        ]);
+
+        // Create projection (would normally be created by TreatmentAdded event)
+        \App\Models\ClinicalTreatment::create([
+            'id' => $treatment->id,
+            'clinic_id' => $this->clinic->id,
+            'visit_id' => $visit->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+            'tooth' => '16',
+            'amount' => '65.00',
+            'notes' => 'Original notes',
+            'projected_at' => now(),
+            'created_at' => now(),
+        ]);
+
+        $response = $this->patch(route('workspace.treatments.update', ['treatment' => $treatment->id]), [
+            'type' => 'Endodoncia',
+            'amount' => '150.00',
+        ]);
+
+        $response->assertStatus(200);
+
+        // Verify treatment was updated in write model
+        $this->assertDatabaseHas('visit_treatments', [
+            'id' => $treatment->id,
+            'type' => 'Endodoncia',
+            'amount' => '150.00',
+            'tooth' => '16', // not updated
+            'notes' => 'Original notes', // not updated
+        ]);
+
+        // Verify event was emitted
+        $this->assertDatabaseHas('event_outbox', [
+            'event_name' => 'clinical.treatment.updated',
+        ]);
+    }
+
+    public function test_update_returns_updated_treatment_item(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+            'created_at' => now(),
+        ]);
+
+        $treatment = \App\Models\VisitTreatment::create([
+            'visit_id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+        ]);
+
+        // Create projection (would normally be created by TreatmentAdded event)
+        \App\Models\ClinicalTreatment::create([
+            'id' => $treatment->id,
+            'clinic_id' => $this->clinic->id,
+            'visit_id' => $visit->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+            'projected_at' => now(),
+            'created_at' => now(),
+        ]);
+
+        $response = $this->patch(route('workspace.treatments.update', ['treatment' => $treatment->id]), [
+            'type' => 'Empaste mejorado',
+        ]);
+
+        $response->assertStatus(200);
+        // Now returns only the single treatment item (outerHTML swap)
+        $response->assertViewIs('workspace.patient.partials._visit_treatment_item');
+        $response->assertViewHas('treatment');
+        $response->assertViewHas('visitId');
+    }
+
+    public function test_update_validates_amount_is_numeric(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $treatment = \App\Models\VisitTreatment::create([
+            'visit_id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+        ]);
+
+        $response = $this->patch(route('workspace.treatments.update', ['treatment' => $treatment->id]), [
+            'amount' => 'not-a-number',
+        ]);
+
+        $response->assertSessionHasErrors('amount');
+    }
+
+    public function test_update_validates_amount_is_positive(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $treatment = \App\Models\VisitTreatment::create([
+            'visit_id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+        ]);
+
+        $response = $this->patch(route('workspace.treatments.update', ['treatment' => $treatment->id]), [
+            'amount' => '-50',
+        ]);
+
+        $response->assertSessionHasErrors('amount');
+    }
+
+    public function test_update_allows_partial_updates(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $treatment = \App\Models\VisitTreatment::create([
+            'visit_id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+            'tooth' => '16',
+            'amount' => '65.00',
+            'notes' => 'Original',
+        ]);
+
+        // Create projection (would normally be created by TreatmentAdded event)
+        \App\Models\ClinicalTreatment::create([
+            'id' => $treatment->id,
+            'clinic_id' => $this->clinic->id,
+            'visit_id' => $visit->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+            'tooth' => '16',
+            'amount' => '65.00',
+            'notes' => 'Original',
+            'projected_at' => now(),
+            'created_at' => now(),
+        ]);
+
+        // Update only notes
+        $response = $this->patch(route('workspace.treatments.update', ['treatment' => $treatment->id]), [
+            'notes' => 'Updated notes',
+        ]);
+
+        $response->assertStatus(200);
+
+        // Verify only notes was updated
+        $this->assertDatabaseHas('visit_treatments', [
+            'id' => $treatment->id,
+            'type' => 'Empaste',
+            'tooth' => '16',
+            'amount' => '65.00',
+            'notes' => 'Updated notes',
+        ]);
+    }
+
+    // FASE 20.4: Tests for deleting treatments
+
+    public function test_deletes_treatment_successfully(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 1,
+            'projected_at' => now(),
+        ]);
+
+        $treatment = \App\Models\VisitTreatment::create([
+            'visit_id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+        ]);
+
+        // Also create projection for the treatment
+        \App\Models\ClinicalTreatment::create([
+            'id' => $treatment->id,
+            'clinic_id' => $this->clinic->id,
+            'visit_id' => $visit->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+            'projected_at' => now(),
+            'created_at' => now(),
+        ]);
+
+        $response = $this->delete(route('workspace.treatments.delete', ['treatment' => $treatment->id]));
+
+        $response->assertStatus(200);
+
+        // Verify treatment was soft deleted in write model
+        $this->assertSoftDeleted('visit_treatments', [
+            'id' => $treatment->id,
+        ]);
+
+        // Verify event was emitted
+        $this->assertDatabaseHas('event_outbox', [
+            'event_name' => 'clinical.treatment.removed',
+        ]);
+    }
+
+    public function test_delete_returns_updated_treatments_partial(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 1,
+            'projected_at' => now(),
+        ]);
+
+        $treatment = \App\Models\VisitTreatment::create([
+            'visit_id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+        ]);
+
+        \App\Models\ClinicalTreatment::create([
+            'id' => $treatment->id,
+            'clinic_id' => $this->clinic->id,
+            'visit_id' => $visit->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+            'projected_at' => now(),
+            'created_at' => now(),
+        ]);
+
+        $response = $this->delete(route('workspace.treatments.delete', ['treatment' => $treatment->id]));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('workspace.patient.partials._visit_treatments');
+        $response->assertViewHas('clinicalVisit');
+    }
+
+    public function test_delete_returns_404_for_nonexistent_treatment(): void
+    {
+        $response = $this->delete(route('workspace.treatments.delete', ['treatment' => 'non-existent-uuid']));
+
+        $response->assertStatus(404);
+    }
+
+    public function test_delete_handles_already_deleted_treatment(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $treatment = \App\Models\VisitTreatment::create([
+            'visit_id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+        ]);
+
+        // Soft delete the treatment
+        $treatment->delete();
+
+        $response = $this->delete(route('workspace.treatments.delete', ['treatment' => $treatment->id]));
+
+        $response->assertStatus(422);
+        $response->assertJson(['error' => 'Treatment already deleted']);
+    }
 }

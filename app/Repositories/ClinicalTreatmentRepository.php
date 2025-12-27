@@ -10,13 +10,16 @@ class ClinicalTreatmentRepository
     /**
      * Get all treatments for a specific visit.
      *
+     * Ordered by creation time to preserve chronological clinical order.
+     * Updates do NOT reorder treatments.
+     *
      * @param string $visitId
      * @return Collection<ClinicalTreatment>
      */
     public function getTreatmentsForVisit(string $visitId): Collection
     {
         return ClinicalTreatment::where('visit_id', $visitId)
-            ->orderBy('projected_at')
+            ->orderBy('created_at')
             ->get();
     }
 

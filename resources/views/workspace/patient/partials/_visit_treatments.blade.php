@@ -1,23 +1,50 @@
-{{-- FASE 20.3: Partial para lista de tratamientos (HTMX swap target) --}}
+{{-- FASE 20.3-20.4: Partial para lista de tratamientos (HTMX swap target) --}}
 @if($clinicalVisit && $clinicalVisit->treatments->isNotEmpty())
     <h3 class="aura-treatments-title">Tratamientos realizados:</h3>
     <ul class="aura-treatments-list">
         @foreach($clinicalVisit->treatments as $treatment)
-            <li class="aura-treatment-item">
-                {{-- Formato denso en una línea: Tipo (Pieza X) — notas · importe --}}
-                <span class="aura-treatment-type">{{ $treatment->type }}</span>
-                @if($treatment->tooth)
-                    <span class="aura-treatment-tooth">(Pieza {{ $treatment->tooth }})</span>
-                @endif
-                @if($treatment->notes)
-                    <span class="aura-treatment-notes" style="width: auto; margin: 0; padding: 0; display: inline;"> — {{ $treatment->notes }}</span>
-                @endif
-                @if($treatment->amount)
-                    <span class="aura-treatment-amount"> · {{ number_format($treatment->amount, 2) }} €</span>
-                @endif
-            </li>
+            @include('workspace.patient.partials._visit_treatment_item', ['treatment' => $treatment, 'visitId' => $clinicalVisit->id])
         @endforeach
     </ul>
 @else
     <p class="aura-no-treatments">Revisión sin tratamientos realizados</p>
 @endif
+
+<script>
+function toggleEditTreatment(treatmentId) {
+    const view = document.getElementById('treatment-view-' + treatmentId);
+    const edit = document.getElementById('treatment-edit-' + treatmentId);
+    const actions = document.getElementById('treatment-actions-' + treatmentId);
+
+    if (edit.style.display === 'none') {
+        view.style.display = 'none';
+        edit.style.display = 'flex';
+        actions.style.display = 'none';
+    } else {
+        view.style.display = 'block';
+        edit.style.display = 'none';
+        actions.style.display = 'flex';
+    }
+}
+
+function showDeleteConfirmation(treatmentId) {
+    const actions = document.getElementById('treatment-actions-' + treatmentId);
+    const deleteConfirm = document.getElementById('treatment-delete-confirm-' + treatmentId);
+
+    actions.style.display = 'none';
+    deleteConfirm.style.display = 'flex';
+}
+
+function confirmDelete(treatmentId) {
+    const deleteForm = document.getElementById('delete-form-' + treatmentId);
+    deleteForm.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}));
+}
+
+function cancelDelete(treatmentId) {
+    const actions = document.getElementById('treatment-actions-' + treatmentId);
+    const deleteConfirm = document.getElementById('treatment-delete-confirm-' + treatmentId);
+
+    deleteConfirm.style.display = 'none';
+    actions.style.display = 'flex';
+}
+</script>

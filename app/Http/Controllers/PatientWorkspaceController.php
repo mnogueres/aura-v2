@@ -253,4 +253,87 @@ class PatientWorkspaceController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
     }
+
+    /**
+     * Update an existing treatment (FASE 20.4).
+     *
+     * Internal write endpoint - NOT part of public API v1.
+     * Returns only the updated treatment (outerHTML swap) to preserve list order.
+     */
+    public function updateTreatment(Request $request, string $treatmentId)
+    {
+        // Validate input
+        $validated = $request->validate([
+            'type' => 'nullable|string|max:255',
+            'tooth' => 'nullable|string|max:10',
+            'amount' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            // Use ClinicalTreatmentService (CQRS write side)
+            $writeTreatment = $this->clinicalTreatmentService->updateTreatment($treatmentId, $validated);
+
+            // Process outbox events immediately for instant projection
+            $this->outboxConsumer->processPendingEvents();
+
+            // HTMX response: return only the updated treatment (outerHTML swap)
+            // This preserves the treatment's position in the list (no reordering)
+            $treatment = \App\Models\ClinicalTreatment::find($treatmentId);
+
+            if (!$treatment) {
+                abort(404, 'Treatment projection not found');
+            }
+
+            $visitId = $treatment->visit_id;
+
+            return view('workspace.patient.partials._visit_treatment_item', compact('treatment', 'visitId'));
+        } catch (\DomainException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Remove a treatment from a visit (FASE 20.4).
+     *
+     * Internal write endpoint - NOT part of public API v1.
+     */
+    public function deleteTreatment(string $treatmentId)
+    {
+        try {
+            // Get visit_id before deletion (use withTrashed to check if already deleted)
+            $treatment = \App\Models\VisitTreatment::withTrashed()->find($treatmentId);
+
+            if (!$treatment) {
+                abort(404, 'Treatment not found');
+            }
+
+            $visitId = $treatment->visit_id;
+
+            // Use ClinicalTreatmentService (CQRS write side)
+            $this->clinicalTreatmentService->removeTreatmentFromVisit($treatmentId);
+
+            // Process outbox events immediately for instant projection
+            $this->outboxConsumer->processPendingEvents();
+
+            // Get clinic_id from context
+            $clinicId = app()->has('currentClinicId')
+                ? app('currentClinicId')
+                : \App\Models\Clinic::latest()->first()?->id ?? 1;
+
+            // HTMX response: get fresh projection data
+            $clinicalVisit = \App\Models\ClinicalVisit::where('id', $visitId)->first();
+
+            if (!$clinicalVisit) {
+                abort(404, 'Clinical visit projection not found');
+            }
+
+            // Load treatments fresh from DB
+            $clinicalVisit->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($visitId);
+
+            return view('workspace.patient.partials._visit_treatments', compact('clinicalVisit'));
+        } catch (\DomainException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
 }
