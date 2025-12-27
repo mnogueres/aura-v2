@@ -22,7 +22,7 @@ class ClinicalTreatmentProjector
         ClinicalTreatment::firstOrCreate(
             ['id' => $treatmentId],
             [
-                'clinic_id' => $event->clinic_id,
+                'clinic_id' => $event->payload['clinic_id'],
                 'patient_id' => $event->payload['patient_id'],
                 'visit_id' => $event->payload['visit_id'],
                 'type' => $event->payload['type'],
