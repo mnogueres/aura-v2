@@ -144,31 +144,132 @@ class OutboxEventConsumer
     }
 
     /**
-     * Dispatch the event to Laravel's event system.
+     * Dispatch the event to projectors.
      *
      * IMPORTANT: This re-dispatches events that were already emitted.
-     * Listeners must be idempotent and NOT create new outbox entries.
+     * Projectors must be idempotent and NOT create new outbox entries.
      *
      * @param EventOutbox $outboxEvent
      * @return void
      */
     private function dispatchEvent(EventOutbox $outboxEvent): void
     {
-        // For now, we just log that we would dispatch the event
-        // In a real implementation, you would rehydrate the event class
-        // and dispatch it to listeners
+        $eventName = $outboxEvent->event_name;
+        $payload = $outboxEvent->payload;
 
-        // Example of what could be done:
-        // $eventClass = $this->getEventClassForName($outboxEvent->event_name);
-        // $event = $this->rehydrateEvent($eventClass, $outboxEvent->payload);
-        // event($event);
-
-        // For this phase, we just log it as processed
-        Log::channel('api')->debug('Event dispatched internally', [
+        Log::channel('api')->debug('Dispatching event to projectors', [
             'outbox_id' => $outboxEvent->id,
-            'event_name' => $outboxEvent->event_name,
-            'payload' => $outboxEvent->payload,
+            'event_name' => $eventName,
         ]);
+
+        // Route event to appropriate projector
+        match($eventName) {
+            'clinical.visit.recorded' => $this->dispatchToVisitProjector($outboxEvent),
+            'clinical.treatment.recorded' => $this->dispatchToTreatmentProjector($outboxEvent),
+            'billing.invoice.created', 'billing.invoice.issued', 'billing.invoice.paid' =>
+                $this->dispatchToBillingProjectors($outboxEvent),
+            'billing.payment.recorded', 'billing.payment.applied', 'billing.payment.unlinked' =>
+                $this->dispatchToBillingProjectors($outboxEvent),
+            'crm.patient.created' => $this->dispatchToPatientProjectors($outboxEvent),
+            'platform.rate_limited', 'platform.idempotency.replayed', 'platform.idempotency.conflict' =>
+                $this->dispatchToAuditProjector($outboxEvent),
+            default => Log::channel('api')->warning('No projector mapped for event', [
+                'event_name' => $eventName,
+                'outbox_id' => $outboxEvent->id,
+            ]),
+        };
+    }
+
+    /**
+     * Dispatch clinical.visit.recorded to projector.
+     */
+    private function dispatchToVisitProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateVisitRecorded($outboxEvent);
+        app(\App\Projections\ClinicalVisitProjector::class)->handleVisitRecorded($event);
+    }
+
+    /**
+     * Dispatch clinical.treatment.recorded to projector.
+     */
+    private function dispatchToTreatmentProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateTreatmentRecorded($outboxEvent);
+        app(\App\Projections\ClinicalTreatmentProjector::class)->handleTreatmentRecorded($event);
+    }
+
+    /**
+     * Dispatch billing events to projectors (stub for now).
+     */
+    private function dispatchToBillingProjectors(EventOutbox $outboxEvent): void
+    {
+        // Billing projectors implementation pending
+        Log::channel('api')->debug('Billing projector dispatch (stub)', [
+            'event_name' => $outboxEvent->event_name,
+        ]);
+    }
+
+    /**
+     * Dispatch patient events to projectors (stub for now).
+     */
+    private function dispatchToPatientProjectors(EventOutbox $outboxEvent): void
+    {
+        // Patient projectors implementation pending
+        Log::channel('api')->debug('Patient projector dispatch (stub)', [
+            'event_name' => $outboxEvent->event_name,
+        ]);
+    }
+
+    /**
+     * Dispatch platform events to audit projector (stub for now).
+     */
+    private function dispatchToAuditProjector(EventOutbox $outboxEvent): void
+    {
+        // Audit projector implementation pending
+        Log::channel('api')->debug('Audit projector dispatch (stub)', [
+            'event_name' => $outboxEvent->event_name,
+        ]);
+    }
+
+    /**
+     * Rehydrate VisitRecorded event from outbox.
+     */
+    private function rehydrateVisitRecorded(EventOutbox $outboxEvent): \App\Events\Clinical\VisitRecorded
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\VisitRecorded(
+            clinic_id: $p['clinic_id'],
+            visit_id: $p['visit_id'],
+            patient_id: $p['patient_id'],
+            professional_id: $p['professional_id'] ?? null,
+            occurred_at: $p['occurred_at'],
+            visit_type: $p['visit_type'] ?? null,
+            summary: $p['summary'] ?? null,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate TreatmentRecorded event from outbox.
+     */
+    private function rehydrateTreatmentRecorded(EventOutbox $outboxEvent): \App\Events\Clinical\TreatmentRecorded
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\TreatmentRecorded(
+            clinic_id: $p['clinic_id'],
+            treatment_id: $p['treatment_id'],
+            visit_id: $p['visit_id'],
+            patient_id: $p['patient_id'],
+            type: $p['type'],
+            tooth: $p['tooth'] ?? null,
+            amount: $p['amount'] ?? null,
+            notes: $p['notes'] ?? null,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
     }
 
     /**
