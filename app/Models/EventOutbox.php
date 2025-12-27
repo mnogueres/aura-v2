@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 /**
  * EventOutbox - Outbox Pattern for domain event persistence.
@@ -19,6 +19,8 @@ use Illuminate\Support\Str;
  */
 class EventOutbox extends Model
 {
+    use HasUuids;
+
     protected $table = 'event_outbox';
 
     public $incrementing = false;
@@ -42,17 +44,6 @@ class EventOutbox extends Model
         'recorded_at' => 'datetime',
         'attempts' => 'integer',
     ];
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = (string) Str::uuid();
-            }
-        });
-    }
 
     /**
      * Get clinic relationship.
