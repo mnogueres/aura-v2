@@ -12,7 +12,7 @@
                             {{ $visit->occurred_at->format('d M Y, H:i') }}
                         </span>
                         <span class="aura-visit-professional">
-                            Visita con {{ $visit->professional_name }}
+                            Visita con {{ $visit->professional?->name ?? 'Profesional no asignado' }}
                         </span>
                         @if($visit->treatments_count > 0)
                             <span class="aura-visit-badge">
