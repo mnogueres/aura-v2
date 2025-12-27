@@ -11,10 +11,11 @@ use App\Events\DomainEvent;
  *
  * Payload:
  * {
+ *   "clinic_id": 1,
  *   "visit_id": "uuid",
  *   "patient_id": 123,
- *   "occurred_at": "2025-12-25T10:30:00Z",
- *   "professional_name": "Dr. García",
+ *   "professional_id": 42,
+ *   "occurred_at": "2025-12-27T10:30:00Z",
  *   "visit_type": "Primera visita",
  *   "summary": "Paciente refiere dolor en molar inferior derecho"
  * }
@@ -22,23 +23,24 @@ use App\Events\DomainEvent;
 class VisitRecorded extends DomainEvent
 {
     public function __construct(
+        int $clinic_id,
         string $visit_id,
         int $patient_id,
+        ?int $professional_id,
         string $occurred_at,
-        string $professional_name,
         ?string $visit_type = null,
         ?string $summary = null,
         ?string $request_id = null,
-        ?int $user_id = null,
-        ?int $clinic_id = null
+        ?int $user_id = null
     ) {
         parent::__construct(
             event: self::eventName(),
             payload: [
+                'clinic_id' => $clinic_id,
                 'visit_id' => $visit_id,
                 'patient_id' => $patient_id,
+                'professional_id' => $professional_id,
                 'occurred_at' => $occurred_at,
-                'professional_name' => $professional_name,
                 'visit_type' => $visit_type,
                 'summary' => $summary,
             ],

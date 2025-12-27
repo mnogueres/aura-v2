@@ -11,6 +11,7 @@ use App\Events\DomainEvent;
  *
  * Payload:
  * {
+ *   "clinic_id": 1,
  *   "treatment_id": "uuid",
  *   "visit_id": "uuid",
  *   "patient_id": 123,
@@ -23,6 +24,7 @@ use App\Events\DomainEvent;
 class TreatmentRecorded extends DomainEvent
 {
     public function __construct(
+        int $clinic_id,
         string $treatment_id,
         string $visit_id,
         int $patient_id,
@@ -31,12 +33,12 @@ class TreatmentRecorded extends DomainEvent
         ?string $amount = null,
         ?string $notes = null,
         ?string $request_id = null,
-        ?int $user_id = null,
-        ?int $clinic_id = null
+        ?int $user_id = null
     ) {
         parent::__construct(
             event: self::eventName(),
             payload: [
+                'clinic_id' => $clinic_id,
                 'treatment_id' => $treatment_id,
                 'visit_id' => $visit_id,
                 'patient_id' => $patient_id,
