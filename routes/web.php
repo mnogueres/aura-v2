@@ -23,6 +23,8 @@ Route::get('/workspace/patients/{patient}', [App\Http\Controllers\PatientWorkspa
     ->name('workspace.patient.show');
 Route::post('/workspace/patients/{patient}/visits', [App\Http\Controllers\PatientWorkspaceController::class, 'storeVisit'])
     ->name('workspace.patient.visits.store');
+Route::post('/workspace/visits/{visit}/treatments', [App\Http\Controllers\PatientWorkspaceController::class, 'storeTreatment'])
+    ->name('workspace.visit.treatments.store');
 
 // API Documentation (dev-only)
 Route::get('/docs/api', [App\Http\Controllers\SwaggerController::class, 'index'])

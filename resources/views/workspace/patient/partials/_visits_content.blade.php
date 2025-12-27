@@ -26,27 +26,25 @@
                 </summary>
 
                 <div class="aura-visit-details">
-                    @if($visit->treatments->isNotEmpty())
-                        <h3 class="aura-treatments-title">Tratamientos realizados:</h3>
-                        <ul class="aura-treatments-list">
-                            @foreach($visit->treatments as $treatment)
-                                <li class="aura-treatment-item">
-                                    <span class="aura-treatment-type">{{ $treatment->type }}</span>
-                                    @if($treatment->tooth)
-                                        <span class="aura-treatment-tooth">(Pieza: {{ $treatment->tooth }})</span>
-                                    @endif
-                                    @if($treatment->amount)
-                                        <span class="aura-treatment-amount">{{ number_format($treatment->amount, 2) }} €</span>
-                                    @endif
-                                    @if($treatment->notes)
-                                        <p class="aura-treatment-notes">{{ $treatment->notes }}</p>
-                                    @endif
-                                </li>
-                            @endforeach
-                        </ul>
-                    @else
-                        <p class="aura-no-treatments">Revisión sin tratamientos realizados</p>
-                    @endif
+                    {{-- FASE 20.3: Botón PROVISIONAL para añadir tratamiento --}}
+                    {{-- IMPORTANTE: Este botón y su estilo son PROVISIONALES --}}
+                    {{-- NO establecen el sistema visual definitivo de Aura --}}
+                    <div style="margin-bottom: 1rem;">
+                        <button
+                            onclick="document.getElementById('new-treatment-modal-{{ $visit->id }}').style.display = 'flex'"
+                            style="padding: 0.375rem 0.75rem; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer; font-size: 0.8125rem;"
+                        >
+                            + Añadir tratamiento
+                        </button>
+                    </div>
+
+                    <div id="treatments-list-{{ $visit->id }}">
+                        @php($clinicalVisit = $visit)
+                        @include('workspace.patient.partials._visit_treatments', ['clinicalVisit' => $visit])
+                    </div>
+
+                    {{-- Include modal for this visit --}}
+                    @include('workspace.patient.partials._new_treatment_modal', ['visitId' => $visit->id])
                 </div>
             </details>
         @endforeach

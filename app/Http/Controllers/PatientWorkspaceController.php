@@ -18,6 +18,7 @@ class PatientWorkspaceController extends Controller
         private readonly ClinicalVisitRepository $clinicalVisitRepository,
         private readonly ClinicalTreatmentRepository $clinicalTreatmentRepository,
         private readonly ClinicalVisitService $clinicalVisitService,
+        private readonly \App\Services\ClinicalTreatmentService $clinicalTreatmentService,
         private readonly OutboxEventConsumer $outboxConsumer
     ) {
     }
@@ -204,6 +205,50 @@ class PatientWorkspaceController extends Controller
                 'visitsMeta',
                 'patientId'
             ));
+        } catch (\DomainException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Add a treatment to an existing visit (FASE 20.3).
+     *
+     * Internal write endpoint - NOT part of public API v1.
+     */
+    public function storeTreatment(Request $request, string $visitId)
+    {
+        // Validate input
+        $validated = $request->validate([
+            'type' => 'required|string|max:255',
+            'tooth' => 'nullable|string|max:10',
+            'amount' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            // Use ClinicalTreatmentService (CQRS write side)
+            $treatment = $this->clinicalTreatmentService->addTreatmentToVisit($visitId, $validated);
+
+            // Process outbox events immediately for instant projection
+            $this->outboxConsumer->processPendingEvents();
+
+            // Get clinic_id from context
+            $clinicId = app()->has('currentClinicId')
+                ? app('currentClinicId')
+                : \App\Models\Clinic::latest()->first()?->id ?? 1;
+
+            // HTMX response: get fresh projection data
+            // Use fresh() to bypass any model cache and get latest from DB
+            $clinicalVisit = \App\Models\ClinicalVisit::where('id', $visitId)->first();
+
+            if (!$clinicalVisit) {
+                abort(404, 'Clinical visit projection not found');
+            }
+
+            // Load treatments fresh from DB
+            $clinicalVisit->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($visitId);
+
+            return view('workspace.patient.partials._visit_treatments', compact('clinicalVisit'));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }

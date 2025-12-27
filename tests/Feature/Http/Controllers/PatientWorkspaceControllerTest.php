@@ -148,4 +148,192 @@ class PatientWorkspaceControllerTest extends TestCase
         $response->assertViewHas('clinicalVisits');
         $response->assertViewHas('visitsMeta');
     }
+
+    // FASE 20.3: Tests for adding treatments to visits
+
+    public function test_adds_treatment_to_visit_successfully(): void
+    {
+        Event::fake();
+
+        // Create a visit first
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+            'visit_type' => 'Primera visita',
+        ]);
+
+        // Create projection (would normally be created by VisitRecorded event)
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'visit_type' => 'Primera visita',
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->post(route('workspace.visit.treatments.store', ['visit' => $visit->id]), [
+            'type' => 'Empaste',
+            'tooth' => '16',
+            'amount' => '65.00',
+            'notes' => 'Composite clase II',
+        ]);
+
+        $response->assertStatus(200);
+
+        // Verify treatment was created in write model
+        $this->assertDatabaseHas('visit_treatments', [
+            'visit_id' => $visit->id,
+            'type' => 'Empaste',
+            'tooth' => '16',
+        ]);
+
+        // Verify event was emitted
+        $this->assertDatabaseHas('event_outbox', [
+            'event_name' => 'clinical.treatment.added',
+        ]);
+    }
+
+    public function test_treatment_requires_type(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->post(route('workspace.visit.treatments.store', ['visit' => $visit->id]), [
+            'tooth' => '16',
+        ]);
+
+        $response->assertSessionHasErrors('type');
+    }
+
+    public function test_treatment_validates_amount_is_numeric(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->post(route('workspace.visit.treatments.store', ['visit' => $visit->id]), [
+            'type' => 'Empaste',
+            'amount' => 'not-a-number',
+        ]);
+
+        $response->assertSessionHasErrors('amount');
+    }
+
+    public function test_treatment_validates_amount_is_positive(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->post(route('workspace.visit.treatments.store', ['visit' => $visit->id]), [
+            'type' => 'Empaste',
+            'amount' => '-50',
+        ]);
+
+        $response->assertSessionHasErrors('amount');
+    }
+
+    public function test_creates_treatment_without_optional_fields(): void
+    {
+        Event::fake();
+
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->post(route('workspace.visit.treatments.store', ['visit' => $visit->id]), [
+            'type' => 'Consulta',
+        ]);
+
+        $response->assertStatus(200);
+
+        $this->assertDatabaseHas('visit_treatments', [
+            'visit_id' => $visit->id,
+            'type' => 'Consulta',
+            'tooth' => null,
+            'amount' => null,
+            'notes' => null,
+        ]);
+    }
+
+    public function test_returns_updated_treatments_partial(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'visit_type' => 'Revisión',
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->post(route('workspace.visit.treatments.store', ['visit' => $visit->id]), [
+            'type' => 'Limpieza',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertViewIs('workspace.patient.partials._visit_treatments');
+        $response->assertViewHas('clinicalVisit');
+    }
 }

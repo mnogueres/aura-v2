@@ -3,18 +3,31 @@
 namespace App\Projections;
 
 use App\Events\Clinical\TreatmentRecorded;
+use App\Events\Clinical\TreatmentAdded;
 use App\Models\ClinicalTreatment;
 use App\Models\ClinicalVisit;
 
 class ClinicalTreatmentProjector
 {
+    /**
+     * Handle TreatmentRecorded (legacy inline creation from createVisit).
+     */
     public function handleTreatmentRecorded(TreatmentRecorded $event): void
     {
         $this->projectTreatment($event);
         $this->incrementVisitTreatmentCount($event);
     }
 
-    private function projectTreatment(TreatmentRecorded $event): void
+    /**
+     * Handle TreatmentAdded (CANONICAL flow - FASE 20.3).
+     */
+    public function handleTreatmentAdded(TreatmentAdded $event): void
+    {
+        $this->projectTreatment($event);
+        $this->incrementVisitTreatmentCount($event);
+    }
+
+    private function projectTreatment(TreatmentRecorded|TreatmentAdded $event): void
     {
         $treatmentId = $event->payload['treatment_id'];
 
@@ -35,7 +48,7 @@ class ClinicalTreatmentProjector
         );
     }
 
-    private function incrementVisitTreatmentCount(TreatmentRecorded $event): void
+    private function incrementVisitTreatmentCount(TreatmentRecorded|TreatmentAdded $event): void
     {
         $visitId = $event->payload['visit_id'];
 

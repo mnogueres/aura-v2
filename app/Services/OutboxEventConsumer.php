@@ -166,6 +166,7 @@ class OutboxEventConsumer
         match($eventName) {
             'clinical.visit.recorded' => $this->dispatchToVisitProjector($outboxEvent),
             'clinical.treatment.recorded' => $this->dispatchToTreatmentProjector($outboxEvent),
+            'clinical.treatment.added' => $this->dispatchToTreatmentAddedProjector($outboxEvent),
             'billing.invoice.created', 'billing.invoice.issued', 'billing.invoice.paid' =>
                 $this->dispatchToBillingProjectors($outboxEvent),
             'billing.payment.recorded', 'billing.payment.applied', 'billing.payment.unlinked' =>
@@ -196,6 +197,15 @@ class OutboxEventConsumer
     {
         $event = $this->rehydrateTreatmentRecorded($outboxEvent);
         app(\App\Projections\ClinicalTreatmentProjector::class)->handleTreatmentRecorded($event);
+    }
+
+    /**
+     * Dispatch clinical.treatment.added to projector (CANONICAL flow - FASE 20.3).
+     */
+    private function dispatchToTreatmentAddedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateTreatmentAdded($outboxEvent);
+        app(\App\Projections\ClinicalTreatmentProjector::class)->handleTreatmentAdded($event);
     }
 
     /**
@@ -259,6 +269,27 @@ class OutboxEventConsumer
         $p = $outboxEvent->payload;
 
         return new \App\Events\Clinical\TreatmentRecorded(
+            clinic_id: $p['clinic_id'],
+            treatment_id: $p['treatment_id'],
+            visit_id: $p['visit_id'],
+            patient_id: $p['patient_id'],
+            type: $p['type'],
+            tooth: $p['tooth'] ?? null,
+            amount: $p['amount'] ?? null,
+            notes: $p['notes'] ?? null,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate TreatmentAdded event from outbox (CANONICAL flow - FASE 20.3).
+     */
+    private function rehydrateTreatmentAdded(EventOutbox $outboxEvent): \App\Events\Clinical\TreatmentAdded
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\TreatmentAdded(
             clinic_id: $p['clinic_id'],
             treatment_id: $p['treatment_id'],
             visit_id: $p['visit_id'],
