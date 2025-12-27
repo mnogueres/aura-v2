@@ -6,24 +6,7 @@
     <div class="aura-visits-list">
         @foreach($clinicalVisits as $visit)
             <details class="aura-visit-item">
-                <summary class="aura-visit-summary">
-                    <div class="aura-visit-header">
-                        <span class="aura-visit-date">
-                            {{ $visit->occurred_at->format('d M Y, H:i') }}
-                        </span>
-                        <span class="aura-visit-professional">
-                            Visita con {{ $visit->professional?->name ?? 'Profesional no asignado' }}
-                        </span>
-                        @if($visit->treatments_count > 0)
-                            <span class="aura-visit-badge">
-                                {{ $visit->treatments_count }} {{ $visit->treatments_count === 1 ? 'tratamiento' : 'tratamientos' }}
-                            </span>
-                        @endif
-                        @if($visit->summary)
-                            <span class="aura-visit-summary-text">{{ $visit->summary }}</span>
-                        @endif
-                    </div>
-                </summary>
+                @include('workspace.patient.partials._visit_header', ['visit' => $visit])
 
                 <div class="aura-visit-details">
                     {{-- FASE 20.3: Botón PROVISIONAL para añadir tratamiento --}}
@@ -75,4 +58,53 @@
         </button>
     </div>
     @endif
+
+    <script>
+    function toggleEditVisit(visitId) {
+        const view = document.getElementById('visit-view-' + visitId);
+        const edit = document.getElementById('visit-edit-' + visitId);
+        const actions = document.getElementById('visit-actions-' + visitId);
+
+        if (edit.style.display === 'none') {
+            view.style.display = 'none';
+            edit.style.display = 'flex';
+            actions.style.display = 'none';
+        } else {
+            view.style.display = 'block';
+            edit.style.display = 'none';
+            actions.style.display = 'flex';
+        }
+    }
+
+    function showDeleteVisitConfirmation(visitId, treatmentsCount) {
+        const actions = document.getElementById('visit-actions-' + visitId);
+
+        if (treatmentsCount > 0) {
+            // Show blocked message
+            const blocked = document.getElementById('visit-delete-blocked-' + visitId);
+            actions.style.display = 'none';
+            blocked.style.display = 'flex';
+        } else {
+            // Show confirmation
+            const deleteConfirm = document.getElementById('visit-delete-confirm-' + visitId);
+            actions.style.display = 'none';
+            deleteConfirm.style.display = 'flex';
+        }
+    }
+
+    function confirmDeleteVisit(visitId) {
+        const deleteForm = document.getElementById('delete-visit-form-' + visitId);
+        deleteForm.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}));
+    }
+
+    function cancelDeleteVisit(visitId) {
+        const actions = document.getElementById('visit-actions-' + visitId);
+        const deleteConfirm = document.getElementById('visit-delete-confirm-' + visitId);
+        const blocked = document.getElementById('visit-delete-blocked-' + visitId);
+
+        deleteConfirm.style.display = 'none';
+        blocked.style.display = 'none';
+        actions.style.display = 'flex';
+    }
+    </script>
 @endif

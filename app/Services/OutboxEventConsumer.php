@@ -165,6 +165,8 @@ class OutboxEventConsumer
         // Route event to appropriate projector
         match($eventName) {
             'clinical.visit.recorded' => $this->dispatchToVisitProjector($outboxEvent),
+            'clinical.visit.updated' => $this->dispatchToVisitUpdatedProjector($outboxEvent),
+            'clinical.visit.removed' => $this->dispatchToVisitRemovedProjector($outboxEvent),
             'clinical.treatment.recorded' => $this->dispatchToTreatmentProjector($outboxEvent),
             'clinical.treatment.added' => $this->dispatchToTreatmentAddedProjector($outboxEvent),
             'clinical.treatment.updated' => $this->dispatchToTreatmentUpdatedProjector($outboxEvent),
@@ -190,6 +192,24 @@ class OutboxEventConsumer
     {
         $event = $this->rehydrateVisitRecorded($outboxEvent);
         app(\App\Projections\ClinicalVisitProjector::class)->handleVisitRecorded($event);
+    }
+
+    /**
+     * Dispatch clinical.visit.updated to projector (CANONICAL flow - FASE 20.6).
+     */
+    private function dispatchToVisitUpdatedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateVisitUpdated($outboxEvent);
+        app(\App\Projections\ClinicalVisitProjector::class)->handleVisitUpdated($event);
+    }
+
+    /**
+     * Dispatch clinical.visit.removed to projector (CANONICAL flow - FASE 20.6).
+     */
+    private function dispatchToVisitRemovedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateVisitRemoved($outboxEvent);
+        app(\App\Projections\ClinicalVisitProjector::class)->handleVisitRemoved($event);
     }
 
     /**
@@ -276,6 +296,42 @@ class OutboxEventConsumer
             occurred_at: $p['occurred_at'],
             visit_type: $p['visit_type'] ?? null,
             summary: $p['summary'] ?? null,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate VisitUpdated event from outbox (CANONICAL flow - FASE 20.6).
+     */
+    private function rehydrateVisitUpdated(EventOutbox $outboxEvent): \App\Events\Clinical\VisitUpdated
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\VisitUpdated(
+            clinic_id: $p['clinic_id'],
+            visit_id: $p['visit_id'],
+            patient_id: $p['patient_id'],
+            occurred_at: $p['occurred_at'],
+            visit_type: $p['visit_type'] ?? null,
+            summary: $p['summary'] ?? null,
+            professional_id: $p['professional_id'] ?? null,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate VisitRemoved event from outbox (CANONICAL flow - FASE 20.6).
+     */
+    private function rehydrateVisitRemoved(EventOutbox $outboxEvent): \App\Events\Clinical\VisitRemoved
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\VisitRemoved(
+            clinic_id: $p['clinic_id'],
+            visit_id: $p['visit_id'],
+            patient_id: $p['patient_id'],
             request_id: $outboxEvent->request_id,
             user_id: $outboxEvent->user_id
         );

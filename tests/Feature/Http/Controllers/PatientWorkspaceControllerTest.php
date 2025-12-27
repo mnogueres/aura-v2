@@ -7,6 +7,8 @@ use App\Models\Patient;
 use App\Models\Visit;
 use App\Models\ClinicalVisit;
 use App\Events\Clinical\VisitRecorded;
+use App\Events\Clinical\VisitUpdated;
+use App\Events\Clinical\VisitRemoved;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -333,7 +335,8 @@ class PatientWorkspaceControllerTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        $response->assertViewIs('workspace.patient.partials._visit_treatments');
+        // FASE 20.6 bug fix: Now returns treatments + OOB header swap
+        $response->assertViewIs('workspace.patient.partials._visit_treatments_with_header');
         $response->assertViewHas('clinicalVisit');
     }
 
@@ -666,7 +669,8 @@ class PatientWorkspaceControllerTest extends TestCase
         $response = $this->delete(route('workspace.treatments.delete', ['treatment' => $treatment->id]));
 
         $response->assertStatus(200);
-        $response->assertViewIs('workspace.patient.partials._visit_treatments');
+        // FASE 20.6 bug fix: Now returns treatments + OOB header swap
+        $response->assertViewIs('workspace.patient.partials._visit_treatments_with_header');
         $response->assertViewHas('clinicalVisit');
     }
 
@@ -709,5 +713,420 @@ class PatientWorkspaceControllerTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJson(['error' => 'Treatment already deleted']);
+    }
+
+    // ===== FASE 20.6: Tests for updating visits =====
+
+    public function test_updates_visit_successfully(): void
+    {
+        Event::fake();
+
+        // Create a visit first
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+            'visit_type' => 'Primera visita',
+            'summary' => 'Resumen inicial',
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'visit_type' => 'Primera visita',
+            'summary' => 'Resumen inicial',
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->patch(route('workspace.visits.update', ['visit' => $visit->id]), [
+            'visit_type' => 'Revisión',
+            'summary' => 'Resumen actualizado',
+        ]);
+
+        $response->assertStatus(200);
+
+        // Verify visit was updated in write model
+        $this->assertDatabaseHas('visits', [
+            'id' => $visit->id,
+            'visit_type' => 'Revisión',
+            'summary' => 'Resumen actualizado',
+        ]);
+
+        // Verify event was emitted
+        $this->assertDatabaseHas('event_outbox', [
+            'event_name' => 'clinical.visit.updated',
+        ]);
+    }
+
+    public function test_update_visit_emits_event(): void
+    {
+        Event::fake();
+
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+            'visit_type' => 'Primera visita',
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'visit_type' => 'Primera visita',
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        Event::fake(); // Reset events
+
+        $newDate = now()->addDay();
+        $this->patch(route('workspace.visits.update', ['visit' => $visit->id]), [
+            'occurred_at' => $newDate->format('Y-m-d H:i:s'),
+            'visit_type' => 'Revisión',
+        ]);
+
+        Event::assertDispatched(VisitUpdated::class, function ($event) use ($visit) {
+            return $event->payload['visit_id'] === $visit->id
+                && $event->payload['clinic_id'] === $this->clinic->id
+                && $event->payload['patient_id'] === $this->patient->id
+                && $event->payload['visit_type'] === 'Revisión';
+        });
+    }
+
+    public function test_update_visit_returns_visits_partial(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+            'visit_type' => 'Primera visita',
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'visit_type' => 'Primera visita',
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->patch(route('workspace.visits.update', ['visit' => $visit->id]), [
+            'visit_type' => 'Revisión',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertViewIs('workspace.patient.partials._visits_content');
+        $response->assertViewHas('clinicalVisits');
+        $response->assertViewHas('visitsMeta');
+    }
+
+    public function test_update_visit_validates_date_format(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->patch(route('workspace.visits.update', ['visit' => $visit->id]), [
+            'occurred_at' => 'invalid-date',
+        ]);
+
+        $response->assertSessionHasErrors('occurred_at');
+    }
+
+    public function test_update_visit_returns_404_for_nonexistent_visit(): void
+    {
+        $response = $this->patch(route('workspace.visits.update', ['visit' => 'non-existent-uuid']), [
+            'visit_type' => 'Revisión',
+        ]);
+
+        $response->assertStatus(404);
+    }
+
+    public function test_update_visit_allows_partial_updates(): void
+    {
+        Event::fake();
+
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+            'visit_type' => 'Primera visita',
+            'summary' => 'Original summary',
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'visit_type' => 'Primera visita',
+            'summary' => 'Original summary',
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        // Update only summary
+        $response = $this->patch(route('workspace.visits.update', ['visit' => $visit->id]), [
+            'summary' => 'Updated summary',
+        ]);
+
+        $response->assertStatus(200);
+
+        // Verify only summary was updated
+        $this->assertDatabaseHas('visits', [
+            'id' => $visit->id,
+            'visit_type' => 'Primera visita',
+            'summary' => 'Updated summary',
+        ]);
+    }
+
+    // ===== FASE 20.6: Tests for deleting visits =====
+
+    public function test_deletes_visit_successfully(): void
+    {
+        Event::fake();
+
+        // Create a visit without treatments
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+            'visit_type' => 'Primera visita',
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'visit_type' => 'Primera visita',
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->delete(route('workspace.visits.delete', ['visit' => $visit->id]));
+
+        $response->assertStatus(200);
+
+        // Verify visit was soft-deleted in write model
+        $this->assertSoftDeleted('visits', [
+            'id' => $visit->id,
+        ]);
+
+        // Verify event was emitted
+        $this->assertDatabaseHas('event_outbox', [
+            'event_name' => 'clinical.visit.removed',
+        ]);
+    }
+
+    public function test_delete_visit_emits_event(): void
+    {
+        Event::fake();
+
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        Event::fake(); // Reset events
+
+        $this->delete(route('workspace.visits.delete', ['visit' => $visit->id]));
+
+        Event::assertDispatched(VisitRemoved::class, function ($event) use ($visit) {
+            return $event->payload['visit_id'] === $visit->id
+                && $event->payload['clinic_id'] === $this->clinic->id
+                && $event->payload['patient_id'] === $this->patient->id;
+        });
+    }
+
+    public function test_delete_visit_returns_visits_partial(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        $response = $this->delete(route('workspace.visits.delete', ['visit' => $visit->id]));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('workspace.patient.partials._visits_content');
+        $response->assertViewHas('clinicalVisits');
+        $response->assertViewHas('visitsMeta');
+    }
+
+    public function test_delete_visit_blocks_when_has_treatments(): void
+    {
+        // Create a visit with treatments
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 1,
+            'projected_at' => now(),
+        ]);
+
+        // Add a treatment to the visit
+        \App\Models\VisitTreatment::create([
+            'visit_id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'type' => 'Empaste',
+        ]);
+
+        $response = $this->delete(route('workspace.visits.delete', ['visit' => $visit->id]));
+
+        $response->assertStatus(422);
+        $response->assertJson(['error' => 'Cannot remove visit with associated treatments']);
+
+        // Verify visit was NOT deleted
+        $this->assertDatabaseHas('visits', [
+            'id' => $visit->id,
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_delete_visit_returns_404_for_nonexistent_visit(): void
+    {
+        $response = $this->delete(route('workspace.visits.delete', ['visit' => 'non-existent-uuid']));
+
+        $response->assertStatus(404);
+    }
+
+    public function test_delete_visit_handles_already_deleted_visit(): void
+    {
+        $visit = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit->occurred_at,
+            'professional_id' => null,
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        // Soft delete the visit
+        $visit->delete();
+
+        $response = $this->delete(route('workspace.visits.delete', ['visit' => $visit->id]));
+
+        $response->assertStatus(422);
+        $response->assertJson(['error' => 'Visit already deleted']);
+    }
+
+    public function test_visit_order_consistent_after_date_update(): void
+    {
+        Event::fake();
+
+        // Create two visits with different dates
+        $visit1 = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now()->subDays(2),
+            'visit_type' => 'Primera visita',
+        ]);
+
+        $visit2 = Visit::create([
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => now()->subDay(),
+            'visit_type' => 'Revisión',
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit1->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit1->occurred_at,
+            'professional_id' => null,
+            'visit_type' => 'Primera visita',
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        ClinicalVisit::create([
+            'id' => $visit2->id,
+            'clinic_id' => $this->clinic->id,
+            'patient_id' => $this->patient->id,
+            'occurred_at' => $visit2->occurred_at,
+            'professional_id' => null,
+            'visit_type' => 'Revisión',
+            'treatments_count' => 0,
+            'projected_at' => now(),
+        ]);
+
+        // Update visit1 to have a more recent date than visit2
+        $newDate = now();
+        $response = $this->patch(route('workspace.visits.update', ['visit' => $visit1->id]), [
+            'occurred_at' => $newDate->format('Y-m-d H:i:s'),
+        ]);
+
+        $response->assertStatus(200);
+
+        // Verify the order in the response (should be sorted by occurred_at descending)
+        $response->assertViewHas('clinicalVisits', function ($visits) use ($visit1, $visit2) {
+            return count($visits) === 2
+                && $visits[0]->id === $visit1->id // visit1 should be first (most recent)
+                && $visits[1]->id === $visit2->id;
+        });
     }
 }

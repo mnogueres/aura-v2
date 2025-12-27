@@ -214,6 +214,9 @@ class PatientWorkspaceController extends Controller
      * Add a treatment to an existing visit (FASE 20.3).
      *
      * Internal write endpoint - NOT part of public API v1.
+     *
+     * FASE 20.6 bug fix: Returns OOB swap to update visit header
+     * (syncs treatments_count so delete visit button disables correctly)
      */
     public function storeTreatment(Request $request, string $visitId)
     {
@@ -248,7 +251,8 @@ class PatientWorkspaceController extends Controller
             // Load treatments fresh from DB
             $clinicalVisit->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($visitId);
 
-            return view('workspace.patient.partials._visit_treatments', compact('clinicalVisit'));
+            // Return treatments + OOB swap for visit header (syncs treatments_count)
+            return view('workspace.patient.partials._visit_treatments_with_header', compact('clinicalVisit'));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
@@ -297,6 +301,9 @@ class PatientWorkspaceController extends Controller
      * Remove a treatment from a visit (FASE 20.4).
      *
      * Internal write endpoint - NOT part of public API v1.
+     *
+     * FASE 20.6 bug fix: Returns OOB swap to update visit header
+     * (syncs treatments_count so delete visit button enables correctly)
      */
     public function deleteTreatment(string $treatmentId)
     {
@@ -331,7 +338,129 @@ class PatientWorkspaceController extends Controller
             // Load treatments fresh from DB
             $clinicalVisit->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($visitId);
 
-            return view('workspace.patient.partials._visit_treatments', compact('clinicalVisit'));
+            // Return treatments + OOB swap for visit header (syncs treatments_count)
+            return view('workspace.patient.partials._visit_treatments_with_header', compact('clinicalVisit'));
+        } catch (\DomainException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Update an existing visit (FASE 20.6).
+     *
+     * Internal write endpoint - NOT part of public API v1.
+     */
+    public function updateVisit(Request $request, string $visitId)
+    {
+        // Validate input
+        $validated = $request->validate([
+            'occurred_at' => 'nullable|date',
+            'visit_type' => 'nullable|string|max:255',
+            'summary' => 'nullable|string',
+            'professional_id' => 'nullable|integer|exists:users,id',
+        ]);
+
+        try {
+            // Check visit exists before calling service
+            $visit = \App\Models\Visit::withTrashed()->find($visitId);
+            if (!$visit) {
+                abort(404, 'Visit not found');
+            }
+
+            $patientId = $visit->patient_id;
+            $clinicId = $visit->clinic_id;
+
+            // Use ClinicalVisitService (CQRS write side)
+            $this->clinicalVisitService->updateVisit($visitId, $validated);
+
+            // Process outbox events immediately for instant projection
+            $this->outboxConsumer->processPendingEvents();
+
+            // HTMX response: refresh visits partial
+            $visitsPage = 1; // Show first page after update
+            $visitsPaginator = $this->clinicalVisitRepository->getVisitsForPatientPaginated(
+                $clinicId,
+                $patientId,
+                8,
+                $visitsPage
+            );
+
+            $clinicalVisits = $visitsPaginator->items();
+            $visitsMeta = [
+                'current_page' => $visitsPaginator->currentPage(),
+                'last_page' => $visitsPaginator->lastPage(),
+                'per_page' => $visitsPaginator->perPage(),
+                'total' => $visitsPaginator->total(),
+            ];
+
+            // Load treatments for each visit
+            foreach ($clinicalVisits as $v) {
+                $v->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($v->id);
+            }
+
+            return view('workspace.patient.partials._visits_content', compact(
+                'clinicalVisits',
+                'visitsMeta',
+                'patientId'
+            ));
+        } catch (\DomainException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Remove a visit (FASE 20.6).
+     *
+     * Internal write endpoint - NOT part of public API v1.
+     * CRITICAL: Blocks deletion if visit has treatments.
+     */
+    public function deleteVisit(string $visitId)
+    {
+        try {
+            // Get patient_id and clinic_id before deletion
+            $visit = \App\Models\Visit::withTrashed()->find($visitId);
+
+            if (!$visit) {
+                abort(404, 'Visit not found');
+            }
+
+            $patientId = $visit->patient_id;
+            $clinicId = $visit->clinic_id;
+
+            // Use ClinicalVisitService (CQRS write side)
+            // This will throw DomainException if visit has treatments
+            $this->clinicalVisitService->removeVisit($visitId);
+
+            // Process outbox events immediately for instant projection
+            $this->outboxConsumer->processPendingEvents();
+
+            // HTMX response: refresh visits partial
+            $visitsPage = 1;
+            $visitsPaginator = $this->clinicalVisitRepository->getVisitsForPatientPaginated(
+                $clinicId,
+                $patientId,
+                8,
+                $visitsPage
+            );
+
+            $clinicalVisits = $visitsPaginator->items();
+            $visitsMeta = [
+                'current_page' => $visitsPaginator->currentPage(),
+                'last_page' => $visitsPaginator->lastPage(),
+                'per_page' => $visitsPaginator->perPage(),
+                'total' => $visitsPaginator->total(),
+            ];
+
+            // Load treatments for each visit
+            foreach ($clinicalVisits as $v) {
+                $v->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($v->id);
+            }
+
+            return view('workspace.patient.partials._visits_content', compact(
+                'clinicalVisits',
+                'visitsMeta',
+                'patientId'
+            ));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
