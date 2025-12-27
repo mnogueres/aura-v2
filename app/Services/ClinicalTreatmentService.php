@@ -26,18 +26,20 @@ class ClinicalTreatmentService
     ) {}
 
     /**
-     * Add a treatment to an existing visit (CANONICAL flow).
+     * Add a treatment to an existing visit (CANONICAL flow - FASE 20.3, FASE 20.X).
+     *
+     * FASE 20.X: Catalog is now REQUIRED - no manual entry allowed:
+     * - treatment_definition_id is REQUIRED
+     * - Loads definition and preloads price/name as snapshot
+     * - User can still override amount for this specific visit
      *
      * @param string $visitId
-     * @param array $treatmentData ['type' (required), 'tooth', 'amount', 'notes']
+     * @param array $treatmentData ['treatment_definition_id' (required), 'tooth', 'amount', 'notes']
      * @return VisitTreatment
      * @throws \DomainException
      */
     public function addTreatmentToVisit(string $visitId, array $treatmentData): VisitTreatment
     {
-        // Domain validations
-        $this->validateTreatmentData($treatmentData);
-
         // Validate visit exists
         $visit = Visit::find($visitId);
 
@@ -45,12 +47,19 @@ class ClinicalTreatmentService
             throw new \DomainException('Visit not found');
         }
 
+        // Domain validations (checks treatment_definition_id is present)
+        $this->validateTreatmentData($treatmentData);
+
+        // FASE 20.X: Catalog is REQUIRED - always enrich from catalog
+        $treatmentData = $this->enrichFromCatalog($treatmentData, $visit->clinic_id);
+
         return DB::transaction(function () use ($visit, $treatmentData) {
             // 1. Create treatment (write model)
             $treatment = VisitTreatment::create([
                 'visit_id' => $visit->id,
                 'clinic_id' => $visit->clinic_id,
                 'patient_id' => $visit->patient_id,
+                'treatment_definition_id' => $treatmentData['treatment_definition_id'] ?? null, // FASE 20.5
                 'type' => $treatmentData['type'],
                 'tooth' => $treatmentData['tooth'] ?? null,
                 'amount' => $treatmentData['amount'] ?? null,
@@ -73,6 +82,43 @@ class ClinicalTreatmentService
 
             return $treatment;
         });
+    }
+
+    /**
+     * Enrich treatment data from catalog definition (FASE 20.5).
+     *
+     * - Loads treatment definition from catalog
+     * - Uses definition name as 'type' (snapshot)
+     * - Preloads default_price as 'amount' if not manually provided
+     * - User can still override amount before saving
+     *
+     * @param array $treatmentData
+     * @param int $clinicId
+     * @return array Enriched treatment data
+     * @throws \DomainException
+     */
+    private function enrichFromCatalog(array $treatmentData, int $clinicId): array
+    {
+        $definitionId = $treatmentData['treatment_definition_id'];
+
+        $definition = \App\Models\TreatmentDefinition::where('id', $definitionId)
+            ->where('clinic_id', $clinicId)
+            ->where('active', true)
+            ->first();
+
+        if (!$definition) {
+            throw new \DomainException('Treatment definition not found or inactive');
+        }
+
+        // Snapshot: use definition name as type
+        $treatmentData['type'] = $definition->name;
+
+        // Preload default_price as amount (only if not manually provided)
+        if (!isset($treatmentData['amount']) && $definition->default_price !== null) {
+            $treatmentData['amount'] = $definition->default_price;
+        }
+
+        return $treatmentData;
     }
 
     /**
@@ -170,7 +216,9 @@ class ClinicalTreatmentService
     }
 
     /**
-     * Validate treatment data (domain rules).
+     * Validate treatment data (domain rules - FASE 20.X).
+     *
+     * FASE 20.X: treatment_definition_id is REQUIRED (no manual entry).
      *
      * @param array $treatmentData
      * @return void
@@ -178,8 +226,9 @@ class ClinicalTreatmentService
      */
     private function validateTreatmentData(array $treatmentData): void
     {
-        if (empty($treatmentData['type'])) {
-            throw new \DomainException('type is required');
+        // FASE 20.X: Catalog is REQUIRED
+        if (empty($treatmentData['treatment_definition_id'])) {
+            throw new \DomainException('treatment_definition_id is required - manual entry is not allowed');
         }
 
         // Validate amount is numeric and positive if present

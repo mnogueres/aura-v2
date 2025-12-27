@@ -171,6 +171,10 @@ class OutboxEventConsumer
             'clinical.treatment.added' => $this->dispatchToTreatmentAddedProjector($outboxEvent),
             'clinical.treatment.updated' => $this->dispatchToTreatmentUpdatedProjector($outboxEvent),
             'clinical.treatment.removed' => $this->dispatchToTreatmentRemovedProjector($outboxEvent),
+            'clinical.treatment_definition.created' => $this->dispatchToTreatmentDefinitionCreatedProjector($outboxEvent),
+            'clinical.treatment_definition.updated' => $this->dispatchToTreatmentDefinitionUpdatedProjector($outboxEvent),
+            'clinical.treatment_definition.deactivated' => $this->dispatchToTreatmentDefinitionDeactivatedProjector($outboxEvent),
+            'clinical.treatment_definition.deleted' => $this->dispatchToTreatmentDefinitionDeletedProjector($outboxEvent),
             'billing.invoice.created', 'billing.invoice.issued', 'billing.invoice.paid' =>
                 $this->dispatchToBillingProjectors($outboxEvent),
             'billing.payment.recorded', 'billing.payment.applied', 'billing.payment.unlinked' =>
@@ -412,6 +416,108 @@ class OutboxEventConsumer
             treatment_id: $p['treatment_id'],
             visit_id: $p['visit_id'],
             patient_id: $p['patient_id'],
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Dispatch clinical.treatment_definition.created to projector (FASE 20.5).
+     */
+    private function dispatchToTreatmentDefinitionCreatedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateTreatmentDefinitionCreated($outboxEvent);
+        app(\App\Projections\ClinicalTreatmentDefinitionProjector::class)->handleTreatmentDefinitionCreated($event);
+    }
+
+    /**
+     * Dispatch clinical.treatment_definition.updated to projector (FASE 20.5).
+     */
+    private function dispatchToTreatmentDefinitionUpdatedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateTreatmentDefinitionUpdated($outboxEvent);
+        app(\App\Projections\ClinicalTreatmentDefinitionProjector::class)->handleTreatmentDefinitionUpdated($event);
+    }
+
+    /**
+     * Dispatch clinical.treatment_definition.deactivated to projector (FASE 20.5).
+     */
+    private function dispatchToTreatmentDefinitionDeactivatedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateTreatmentDefinitionDeactivated($outboxEvent);
+        app(\App\Projections\ClinicalTreatmentDefinitionProjector::class)->handleTreatmentDefinitionDeactivated($event);
+    }
+
+    /**
+     * Dispatch clinical.treatment_definition.deleted to projector (FASE 20.7).
+     */
+    private function dispatchToTreatmentDefinitionDeletedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateTreatmentDefinitionDeleted($outboxEvent);
+        app(\App\Projections\ClinicalTreatmentDefinitionProjector::class)->handleTreatmentDefinitionDeleted($event);
+    }
+
+    /**
+     * Rehydrate TreatmentDefinitionCreated event from outbox (FASE 20.5).
+     */
+    private function rehydrateTreatmentDefinitionCreated(EventOutbox $outboxEvent): \App\Events\Clinical\TreatmentDefinitionCreated
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\TreatmentDefinitionCreated(
+            clinic_id: $p['clinic_id'],
+            treatment_definition_id: $p['treatment_definition_id'],
+            name: $p['name'],
+            default_price: $p['default_price'] ?? null,
+            active: $p['active'] ?? true,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate TreatmentDefinitionUpdated event from outbox (FASE 20.5).
+     */
+    private function rehydrateTreatmentDefinitionUpdated(EventOutbox $outboxEvent): \App\Events\Clinical\TreatmentDefinitionUpdated
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\TreatmentDefinitionUpdated(
+            clinic_id: $p['clinic_id'],
+            treatment_definition_id: $p['treatment_definition_id'],
+            name: $p['name'],
+            default_price: $p['default_price'] ?? null,
+            active: $p['active'] ?? true,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate TreatmentDefinitionDeactivated event from outbox (FASE 20.5).
+     */
+    private function rehydrateTreatmentDefinitionDeactivated(EventOutbox $outboxEvent): \App\Events\Clinical\TreatmentDefinitionDeactivated
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\TreatmentDefinitionDeactivated(
+            clinic_id: $p['clinic_id'],
+            treatment_definition_id: $p['treatment_definition_id'],
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate TreatmentDefinitionDeleted event from outbox (FASE 20.7).
+     */
+    private function rehydrateTreatmentDefinitionDeleted(EventOutbox $outboxEvent): \App\Events\Clinical\TreatmentDefinitionDeleted
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\TreatmentDefinitionDeleted(
+            clinic_id: $p['clinic_id'],
+            treatment_definition_id: $p['treatment_definition_id'],
             request_id: $outboxEvent->request_id,
             user_id: $outboxEvent->user_id
         );

@@ -64,6 +64,12 @@ class PatientWorkspaceController extends Controller
             $visit->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($visit->id);
         }
 
+        // FASE 20.5: Load active treatment definitions for catalog selection
+        $treatmentDefinitions = \App\Models\ClinicalTreatmentDefinition::forClinic($clinicId)
+            ->active()
+            ->alphabetical()
+            ->get();
+
         // FASE 17: Timeline técnico no se muestra en Workspace (código preservado)
         /*
         $timelinePage = $request->query('timeline_page', 1);
@@ -116,7 +122,8 @@ class PatientWorkspaceController extends Controller
                 return view('workspace.patient.partials._visits_content', compact(
                     'clinicalVisits',
                     'visitsMeta',
-                    'patientId'
+                    'patientId',
+                    'treatmentDefinitions' // FASE 20.5
                 ));
             }
         }
@@ -131,7 +138,8 @@ class PatientWorkspaceController extends Controller
             'timeline',
             'timelineMeta',
             'billing',
-            'billingMeta'
+            'billingMeta',
+            'treatmentDefinitions' // FASE 20.5
         ));
     }
 
@@ -200,10 +208,17 @@ class PatientWorkspaceController extends Controller
                 $v->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($v->id);
             }
 
+            // FASE 20.5: Load active treatment definitions for catalog selection
+            $treatmentDefinitions = \App\Models\ClinicalTreatmentDefinition::forClinic($clinicId)
+                ->active()
+                ->alphabetical()
+                ->get();
+
             return view('workspace.patient.partials._visits_content', compact(
                 'clinicalVisits',
                 'visitsMeta',
-                'patientId'
+                'patientId',
+                'treatmentDefinitions' // FASE 20.5
             ));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -220,9 +235,9 @@ class PatientWorkspaceController extends Controller
      */
     public function storeTreatment(Request $request, string $visitId)
     {
-        // Validate input
+        // Validate input (FASE 20.X: catalog is REQUIRED)
         $validated = $request->validate([
-            'type' => 'required|string|max:255',
+            'treatment_definition_id' => 'required|uuid|exists:treatment_definitions,id', // FASE 20.X: REQUIRED
             'tooth' => 'nullable|string|max:10',
             'amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
@@ -398,10 +413,17 @@ class PatientWorkspaceController extends Controller
                 $v->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($v->id);
             }
 
+            // FASE 20.5: Load active treatment definitions for catalog selection
+            $treatmentDefinitions = \App\Models\ClinicalTreatmentDefinition::forClinic($clinicId)
+                ->active()
+                ->alphabetical()
+                ->get();
+
             return view('workspace.patient.partials._visits_content', compact(
                 'clinicalVisits',
                 'visitsMeta',
-                'patientId'
+                'patientId',
+                'treatmentDefinitions' // FASE 20.5
             ));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -456,10 +478,17 @@ class PatientWorkspaceController extends Controller
                 $v->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($v->id);
             }
 
+            // FASE 20.5: Load active treatment definitions for catalog selection
+            $treatmentDefinitions = \App\Models\ClinicalTreatmentDefinition::forClinic($clinicId)
+                ->active()
+                ->alphabetical()
+                ->get();
+
             return view('workspace.patient.partials._visits_content', compact(
                 'clinicalVisits',
                 'visitsMeta',
-                'patientId'
+                'patientId',
+                'treatmentDefinitions' // FASE 20.5
             ));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);

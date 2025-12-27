@@ -34,6 +34,18 @@ Route::patch('/workspace/treatments/{treatment}', [App\Http\Controllers\PatientW
 Route::delete('/workspace/treatments/{treatment}', [App\Http\Controllers\PatientWorkspaceController::class, 'deleteTreatment'])
     ->name('workspace.treatments.delete');
 
+// FASE 20.7: Treatment Catalog routes (workspace management)
+Route::get('/workspace/treatments', [App\Http\Controllers\TreatmentCatalogController::class, 'index'])
+    ->name('workspace.treatments.index');
+Route::post('/workspace/treatments', [App\Http\Controllers\TreatmentCatalogController::class, 'store'])
+    ->name('workspace.treatments.store');
+Route::patch('/workspace/treatment-definitions/{treatmentDefinition}', [App\Http\Controllers\TreatmentCatalogController::class, 'update'])
+    ->name('workspace.treatment-definitions.update');
+Route::patch('/workspace/treatment-definitions/{treatmentDefinition}/toggle-active', [App\Http\Controllers\TreatmentCatalogController::class, 'toggleActive'])
+    ->name('workspace.treatment-definitions.toggle-active');
+Route::delete('/workspace/treatment-definitions/{treatmentDefinition}', [App\Http\Controllers\TreatmentCatalogController::class, 'destroy'])
+    ->name('workspace.treatment-definitions.destroy');
+
 // API Documentation (dev-only)
 Route::get('/docs/api', [App\Http\Controllers\SwaggerController::class, 'index'])
     ->name('docs.api');

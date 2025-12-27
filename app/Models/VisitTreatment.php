@@ -21,6 +21,7 @@ class VisitTreatment extends Model
         'clinic_id',
         'patient_id',
         'visit_id',
+        'treatment_definition_id', // FASE 20.5: Optional catalog reference
         'type',
         'tooth',
         'amount',
@@ -49,5 +50,13 @@ class VisitTreatment extends Model
     public function visit()
     {
         return $this->belongsTo(Visit::class);
+    }
+
+    /**
+     * FASE 20.5: Optional relationship to treatment catalog definition
+     */
+    public function treatmentDefinition()
+    {
+        return $this->belongsTo(TreatmentDefinition::class, 'treatment_definition_id');
     }
 }
