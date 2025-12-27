@@ -22,7 +22,7 @@ class ClinicalVisit extends Model
         'clinic_id',
         'patient_id',
         'occurred_at',
-        'professional_name',
+        'professional_id',
         'visit_type',
         'summary',
         'treatments_count',
@@ -39,5 +39,10 @@ class ClinicalVisit extends Model
     public function treatments()
     {
         return $this->hasMany(ClinicalTreatment::class, 'visit_id');
+    }
+
+    public function professional()
+    {
+        return $this->belongsTo(User::class, 'professional_id');
     }
 }
