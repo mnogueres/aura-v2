@@ -30,8 +30,8 @@
 
         <form
             hx-post="{{ route('workspace.professionals.store') }}"
-            hx-target="#professionals-list"
-            hx-swap="innerHTML"
+            hx-target="#professionals-content"
+            hx-swap="outerHTML"
             hx-on::after-request="if(event.detail.successful) { document.getElementById('new-professional-modal').style.display = 'none'; this.reset(); }"
         >
             @csrf

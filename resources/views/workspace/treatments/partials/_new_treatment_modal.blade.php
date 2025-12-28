@@ -9,8 +9,8 @@
         <form
             id="new-treatment-form"
             hx-post="{{ route('workspace.treatments.store') }}"
-            hx-target="#treatments-list"
-            hx-swap="innerHTML"
+            hx-target="#treatments-content"
+            hx-swap="outerHTML"
         >
             @csrf
 

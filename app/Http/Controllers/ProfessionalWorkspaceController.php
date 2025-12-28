@@ -69,10 +69,12 @@ class ProfessionalWorkspaceController extends Controller
             // Process outbox events immediately
             $this->outboxConsumer->processPendingEvents();
 
-            // Return updated list
-            $professionals = $this->repository->getAllProfessionals($clinicId);
+            // Return updated content (FASE 21.3 - canonical HTMX response)
+            $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+                ->alphabetical()
+                ->paginate(8);
 
-            return view('workspace.professionals.partials._professionals_list', [
+            return view('workspace.professionals.partials._professionals_content', [
                 'professionals' => $professionals,
             ]);
         } catch (\DomainException $e) {
@@ -101,10 +103,12 @@ class ProfessionalWorkspaceController extends Controller
             // Process outbox events immediately
             $this->outboxConsumer->processPendingEvents();
 
-            // Return updated list
-            $professionals = $this->repository->getAllProfessionals($clinicId);
+            // Return updated content (FASE 21.3 - canonical HTMX response)
+            $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+                ->alphabetical()
+                ->paginate(8);
 
-            return view('workspace.professionals.partials._professionals_list', [
+            return view('workspace.professionals.partials._professionals_content', [
                 'professionals' => $professionals,
             ]);
         } catch (\DomainException $e) {
@@ -127,10 +131,12 @@ class ProfessionalWorkspaceController extends Controller
             // Process outbox events immediately
             $this->outboxConsumer->processPendingEvents();
 
-            // Return updated list
-            $professionals = $this->repository->getAllProfessionals($clinicId);
+            // Return updated content (FASE 21.3 - canonical HTMX response)
+            $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+                ->alphabetical()
+                ->paginate(8);
 
-            return view('workspace.professionals.partials._professionals_list', [
+            return view('workspace.professionals.partials._professionals_content', [
                 'professionals' => $professionals,
             ]);
         } catch (\DomainException $e) {
@@ -154,10 +160,12 @@ class ProfessionalWorkspaceController extends Controller
             // Process outbox events immediately
             $this->outboxConsumer->processPendingEvents();
 
-            // Return updated list
-            $professionals = $this->repository->getAllProfessionals($clinicId);
+            // Return updated content (FASE 21.3 - canonical HTMX response)
+            $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+                ->alphabetical()
+                ->paginate(8);
 
-            return view('workspace.professionals.partials._professionals_list', [
+            return view('workspace.professionals.partials._professionals_content', [
                 'professionals' => $professionals,
             ]);
         } catch (\DomainException $e) {

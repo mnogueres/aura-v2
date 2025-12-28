@@ -117,19 +117,12 @@ class TreatmentCatalogController extends Controller
                 ]);
             }
 
-            // HTMX response: refresh treatments list (catalog page)
+            // HTMX response: refresh treatments content (FASE 21.3 - canonical response)
             $treatments = ClinicalTreatmentDefinition::forClinic($clinicId)
                 ->alphabetical()
-                ->get();
+                ->paginate(8);
 
-            // Calculate usage count for each treatment (for conditional delete button)
-            $treatments->each(function ($treatment) {
-                $treatment->usage_count = \App\Models\VisitTreatment::withTrashed()
-                    ->where('treatment_definition_id', $treatment->id)
-                    ->count();
-            });
-
-            return view('workspace.treatments.partials._treatments_list', compact('treatments'));
+            return view('workspace.treatments.partials._treatments_content', compact('treatments'));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage(), 'success' => false], 422);
         }
@@ -158,19 +151,12 @@ class TreatmentCatalogController extends Controller
                 ? app('currentClinicId')
                 : \App\Models\Clinic::latest()->first()?->id ?? 1;
 
-            // HTMX response: refresh treatments list
+            // HTMX response: refresh treatments content (FASE 21.3 - canonical response)
             $treatments = ClinicalTreatmentDefinition::forClinic($clinicId)
                 ->alphabetical()
-                ->get();
+                ->paginate(8);
 
-            // Calculate usage count for each treatment (for conditional delete button)
-            $treatments->each(function ($treatment) {
-                $treatment->usage_count = \App\Models\VisitTreatment::withTrashed()
-                    ->where('treatment_definition_id', $treatment->id)
-                    ->count();
-            });
-
-            return view('workspace.treatments.partials._treatments_list', compact('treatments'));
+            return view('workspace.treatments.partials._treatments_content', compact('treatments'));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
@@ -201,19 +187,12 @@ class TreatmentCatalogController extends Controller
                 ? app('currentClinicId')
                 : \App\Models\Clinic::latest()->first()?->id ?? 1;
 
-            // HTMX response: refresh treatments list
+            // HTMX response: refresh treatments content (FASE 21.3 - canonical response)
             $treatments = ClinicalTreatmentDefinition::forClinic($clinicId)
                 ->alphabetical()
-                ->get();
+                ->paginate(8);
 
-            // Calculate usage count for each treatment (for conditional delete button)
-            $treatments->each(function ($treatment) {
-                $treatment->usage_count = \App\Models\VisitTreatment::withTrashed()
-                    ->where('treatment_definition_id', $treatment->id)
-                    ->count();
-            });
-
-            return view('workspace.treatments.partials._treatments_list', compact('treatments'));
+            return view('workspace.treatments.partials._treatments_content', compact('treatments'));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
@@ -239,19 +218,12 @@ class TreatmentCatalogController extends Controller
                 ? app('currentClinicId')
                 : \App\Models\Clinic::latest()->first()?->id ?? 1;
 
-            // HTMX response: refresh treatments list
+            // HTMX response: refresh treatments content (FASE 21.3 - canonical response)
             $treatments = ClinicalTreatmentDefinition::forClinic($clinicId)
                 ->alphabetical()
-                ->get();
+                ->paginate(8);
 
-            // Calculate usage count for each treatment (for conditional delete button)
-            $treatments->each(function ($treatment) {
-                $treatment->usage_count = \App\Models\VisitTreatment::withTrashed()
-                    ->where('treatment_definition_id', $treatment->id)
-                    ->count();
-            });
-
-            return view('workspace.treatments.partials._treatments_list', compact('treatments'));
+            return view('workspace.treatments.partials._treatments_content', compact('treatments'));
         } catch (\DomainException $e) {
             // Return error if treatment has usage
             return response()->json(['error' => $e->getMessage()], 422);
