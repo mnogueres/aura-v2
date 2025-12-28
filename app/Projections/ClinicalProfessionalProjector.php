@@ -22,8 +22,8 @@ class ClinicalProfessionalProjector
     {
         $professionalId = $event->payload['professional_id'];
 
-        // Idempotency: use professional_id as unique identifier
-        ClinicalProfessional::firstOrCreate(
+        // Idempotency: use updateOrCreate to handle duplicate events
+        ClinicalProfessional::updateOrCreate(
             ['id' => $professionalId],
             [
                 'clinic_id' => $event->payload['clinic_id'],

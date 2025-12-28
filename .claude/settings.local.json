@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php artisan make:migration:*)"
+      "Bash(php artisan make:migration:*)",
+      "Bash(php artisan test:*)",
+      "Bash(php artisan make:factory:*)",
+      "Bash(php artisan migrate:*)",
+      "Bash(git commit:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []

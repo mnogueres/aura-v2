@@ -37,7 +37,7 @@ class Professional extends Model
     {
         static::addGlobalScope(new ClinicScope);
 
-        // Auto-emit domain events for CQRS
+        // Auto-emit domain events for CQRS (needed for factory-created models in tests)
         static::observe(\App\Observers\ProfessionalObserver::class);
     }
 
