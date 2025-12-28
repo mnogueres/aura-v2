@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClinicalTreatmentDefinition;
+use App\Models\TreatmentDefinition;
 use App\Services\ClinicalTreatmentCatalogService;
 use App\Services\OutboxEventConsumer;
 use Illuminate\Http\Request;

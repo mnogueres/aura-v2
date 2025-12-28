@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BillingTimeline;
+use App\Models\PatientTimeline;
+use App\Models\Visit;
+use App\Models\VisitTreatment;
 use App\Repositories\PatientSummaryRepository;
 use App\Repositories\ClinicalVisitRepository;
 use App\Repositories\ClinicalTreatmentRepository;
 use App\Services\ClinicalVisitService;
 use App\Services\OutboxEventConsumer;
-use App\Models\PatientTimeline;
-use App\Models\BillingTimeline;
 use Illuminate\Http\Request;
 
 class PatientWorkspaceController extends Controller

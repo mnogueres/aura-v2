@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Professional;
 use App\Repositories\ClinicalProfessionalRepository;
 use App\Services\ClinicalProfessionalService;
 use App\Services\OutboxEventConsumer;
