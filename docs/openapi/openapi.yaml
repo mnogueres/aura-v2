@@ -1,3 +1,8 @@
+# ──────────────────────────────────────────────────────────────────
+# Este archivo es documentación externa de la API pública.
+# No es contrato de desarrollo ni fuente de verdad del sistema.
+# ──────────────────────────────────────────────────────────────────
+
 openapi: 3.0.3
 
 info:

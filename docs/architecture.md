@@ -1,5 +1,21 @@
 # Aura v2 — Architecture Context
 
+<!--
+JERARQUÍA DOCUMENTAL DE AURA
+
+Prioridad de documentos:
+1. architecture.md (este archivo)
+2. aura-ui-contract.md
+3. aura-rules.md
+4. clinical_model.md
+5. events.md
+6. roadmap.md
+7. api_versioning.md
+8. openapi.yaml
+
+Ningún documento de menor prioridad puede contradecir a uno superior.
+-->
+
 ## Purpose
 Aura is a multi-tenant clinical management system focused on:
 - Patient activity tracking
