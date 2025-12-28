@@ -18,7 +18,7 @@ class VisitUpdated extends DomainEvent
         string $occurred_at,
         ?string $visit_type = null,
         ?string $summary = null,
-        ?int $professional_id = null,
+        ?string $professional_id = null, // UUID string, not int
         ?string $request_id = null,
         ?int $user_id = null
     ) {

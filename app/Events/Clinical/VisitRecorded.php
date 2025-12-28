@@ -26,7 +26,7 @@ class VisitRecorded extends DomainEvent
         int $clinic_id,
         string $visit_id,
         int $patient_id,
-        ?int $professional_id,
+        ?string $professional_id, // UUID string, not int
         string $occurred_at,
         ?string $visit_type = null,
         ?string $summary = null,
