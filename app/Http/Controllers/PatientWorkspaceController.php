@@ -288,8 +288,14 @@ class PatientWorkspaceController extends Controller
             // Load treatments fresh from DB
             $clinicalVisit->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($visitId);
 
+            // FASE 21.1: Load active professionals for visit assignment
+            $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+                ->active()
+                ->alphabetical()
+                ->get();
+
             // Return treatments + OOB swap for visit header (syncs treatments_count)
-            return view('workspace.patient.partials._visit_treatments_with_header', compact('clinicalVisit'));
+            return view('workspace.patient.partials._visit_treatments_with_header', compact('clinicalVisit', 'professionals'));
         } catch (\DomainException $e) {
             \Log::error('storeTreatment DomainException: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 422);
@@ -372,8 +378,14 @@ class PatientWorkspaceController extends Controller
             // Load treatments fresh from DB
             $clinicalVisit->treatments = $this->clinicalTreatmentRepository->getTreatmentsForVisit($visitId);
 
+            // FASE 21.1: Load active professionals for visit assignment
+            $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+                ->active()
+                ->alphabetical()
+                ->get();
+
             // Return treatments + OOB swap for visit header (syncs treatments_count)
-            return view('workspace.patient.partials._visit_treatments_with_header', compact('clinicalVisit'));
+            return view('workspace.patient.partials._visit_treatments_with_header', compact('clinicalVisit', 'professionals'));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
