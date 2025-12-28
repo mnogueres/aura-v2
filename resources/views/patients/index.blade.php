@@ -10,7 +10,7 @@
     </p>
 
     <button
-        onclick="alert('Funcionalidad próximamente disponible')"
+        onclick="document.getElementById('new-patient-modal').style.display = 'flex'"
         style="
             padding: 0.5rem 1rem;
             background: #0ea5e9;
@@ -29,51 +29,7 @@
     </button>
 </div>
 
-<div x-data="{
-        search: '',
-        patients: {{ json_encode($patients) }},
-        get filteredPatients() {
-            if (this.search === '') return this.patients;
-
-            const query = this.search.toLowerCase();
-            return this.patients.filter(patient =>
-                patient.name.toLowerCase().includes(query) ||
-                patient.dni.toLowerCase().includes(query)
-            );
-        }
-    }">
-    <!-- Buscador -->
-    <div class="aura-search" style="margin-bottom: 1.5rem;">
-        <input
-            type="text"
-            class="aura-search-input"
-            placeholder="Buscar por nombre o DNI..."
-            x-model="search"
-            autocomplete="off">
-    </div>
-
-    <!-- Listado -->
-    <div class="aura-patient-list">
-        <template x-for="patient in filteredPatients" :key="patient.id">
-            <a
-                :href="`/workspace/patients/${patient.id}`"
-                class="aura-patient-item"
-                x-show="true"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform scale-95"
-                x-transition:enter-end="opacity-100 transform scale-100">
-                <div class="aura-patient-main">
-                    <h3 class="aura-patient-name" x-text="patient.name"></h3>
-                    <span class="aura-patient-dni" x-text="patient.dni"></span>
-                </div>
-                <span
-                    class="aura-status-badge"
-                    :class="patient.status === 'Activo' ? 'active' : 'inactive'"
-                    x-text="patient.status"></span>
-            </a>
-        </template>
-    </div>
-</div>
+@include('patients.partials._patients_content', ['patients' => $patients])
 
 <!-- Status bar FUERA de la cápsula -->
 <div class="aura-statusbar">
@@ -101,4 +57,8 @@
         </a>
     </div>
 </div>
+
+{{-- New Patient Modal --}}
+@include('patients.partials._new_patient_modal')
+
 @endsection

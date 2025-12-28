@@ -17,6 +17,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 Route::get('/patients', [App\Http\Controllers\PatientController::class, 'index'])->name('patients.index');
+Route::post('/patients', [App\Http\Controllers\PatientController::class, 'store'])->name('patients.store');
 
 // Workspace routes
 Route::get('/workspace/patients/{patient}', [App\Http\Controllers\PatientWorkspaceController::class, 'show'])
