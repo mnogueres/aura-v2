@@ -509,11 +509,18 @@ class PatientWorkspaceController extends Controller
                 ->alphabetical()
                 ->get();
 
+            // FASE 21.1: Load active professionals for visit assignment
+            $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+                ->active()
+                ->alphabetical()
+                ->get();
+
             return view('workspace.patient.partials._visits_content', compact(
                 'clinicalVisits',
                 'visitsMeta',
                 'patientId',
-                'treatmentDefinitions' // FASE 20.5
+                'treatmentDefinitions', // FASE 20.5
+                'professionals' // FASE 21.1
             ));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
