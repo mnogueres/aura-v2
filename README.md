@@ -1,60 +1,235 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Aura v2 - Sistema de Gestión Clínica Dental
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema de gestión para clínicas dentales con arquitectura CQRS y Event Sourcing.
 
-## About Laravel
+## 🚀 Características Principales
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### CRUD Completo de Catálogos
+- **Pacientes**: Crear, editar y gestionar información de pacientes
+- **Profesionales**: Gestión completa de profesionales con roles y estados
+- **Tratamientos**: Catálogo de tratamientos con precios de referencia
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Arquitectura Técnica
+- **CQRS**: Separación de comandos y consultas
+- **Event Sourcing**: Historial completo de eventos del dominio
+- **Outbox Pattern**: Procesamiento asíncrono de eventos
+- **UUID Primary Keys**: Identificadores únicos universales
+- **Soft Deletes**: Borrado lógico sin pérdida de datos
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🎨 UI/UX - Diseño Aura
 
-## Learning Laravel
+### Sistema Visual Canónico
+- **Grid Layout**: Columnas fijas para alineación perfecta
+  - Contenido: `1fr` (flexible)
+  - Estado: `110px` (fijo)
+  - Acciones: `80px` (fijo)
+- **Alpine.js**: Reactividad client-side con filtrado en tiempo real
+- **HTMX**: Actualizaciones dinámicas sin recarga de página
+- **Badges de Estado**: Posición fija independiente del contenido
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Patrón de Interacción
+```
+Hover en item → Botones aparecen (fade in)
+  ↓
+Click editar → Modal se abre con datos actuales
+  ↓
+Modificar y guardar → HTMX PATCH al servidor
+  ↓
+Respuesta con HTML fresco → Swap automático
+  ↓
+Modal se cierra → Lista actualizada
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 📦 Instalación
 
-## Laravel Sponsors
+```bash
+# Clonar repositorio
+git clone https://github.com/mnogueres/aura-v2.git
+cd aura-v2
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# Instalar dependencias
+composer install
+npm install
 
-### Premium Partners
+# Configurar entorno
+cp .env.example .env
+php artisan key:generate
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# Configurar base de datos en .env
+# DB_CONNECTION=mysql
+# DB_DATABASE=aura_laravel
+# DB_USERNAME=root
+# DB_PASSWORD=
 
-## Contributing
+# Ejecutar migraciones
+php artisan migrate
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Compilar assets
+npm run build
 
-## Code of Conduct
+# Iniciar servidor
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 🗂️ Estructura del Proyecto
 
-## Security Vulnerabilities
+### Modelos de Dominio
+```
+app/Models/
+├── Patient.php                 # Pacientes
+├── Professional.php            # Profesionales (write model)
+├── ClinicalProfessional.php   # Profesionales (read model)
+├── TreatmentDefinition.php    # Tratamientos (write model)
+├── ClinicalTreatmentDefinition.php  # Tratamientos (read model)
+└── OutboxEvent.php            # Eventos de dominio
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Controladores
+```
+app/Http/Controllers/
+├── PatientController.php                # CRUD Pacientes
+├── ProfessionalWorkspaceController.php  # CRUD Profesionales
+├── TreatmentCatalogController.php       # CRUD Tratamientos
+└── PatientWorkspaceController.php       # Workspace de paciente
+```
 
-## License
+### Servicios de Dominio
+```
+app/Services/
+├── ClinicalProfessionalService.php      # Lógica de negocio Profesionales
+├── ClinicalTreatmentCatalogService.php  # Lógica de negocio Tratamientos
+└── OutboxEventConsumer.php              # Procesamiento de eventos
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# aura-v2
+### Vistas (Blade + Alpine.js + HTMX)
+```
+resources/views/
+├── patients/
+│   ├── index.blade.php                  # Listado de pacientes
+│   └── partials/
+│       ├── _patients_content.blade.php  # Contenido dinámico
+│       ├── _new_patient_modal.blade.php # Modal crear
+│       └── _edit_patient_modal.blade.php # Modal editar
+├── workspace/
+│   ├── professionals/
+│   │   ├── index.blade.php
+│   │   └── partials/
+│   │       ├── _professionals_content.blade.php
+│   │       ├── _new_professional_modal.blade.php
+│   │       └── _edit_professional_modal.blade.php
+│   └── treatments/
+│       ├── index.blade.php
+│       └── partials/
+│           ├── _treatments_content.blade.php
+│           ├── _new_treatment_modal.blade.php
+│           └── _edit_treatment_modal.blade.php
+```
+
+## 🔧 Tecnologías
+
+- **Backend**: Laravel 11
+- **Base de datos**: MySQL
+- **Frontend**: Alpine.js 3.x, HTMX 1.9
+- **CSS**: Custom Aura Design System
+- **Build**: Vite
+- **Testing**: PHPUnit, Pest
+
+## 📝 Convenciones de Código
+
+### Commits
+Seguimos Conventional Commits:
+```
+feat: Nueva funcionalidad
+fix: Corrección de bug
+docs: Cambios en documentación
+refactor: Refactorización de código
+test: Añadir o modificar tests
+```
+
+Todos los commits incluyen:
+```
+🤖 Generated with Claude Code (https://claude.com/claude-code)
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+### Arquitectura HTMX
+- **Target**: Siempre usar IDs específicos (`#professionals-content`)
+- **Swap**: Usar `outerHTML` para reemplazar contenido completo
+- **CSRF**: Incluir token en `hx-headers` para PATCH/DELETE
+- **Modals**: Cerrar automáticamente con `hx-on::after-request`
+
+## 📊 Estado del Proyecto
+
+### Fase Actual: FASE 21.3 ✅
+**CRUD + HTMX Stabilization - COMPLETADO**
+
+### Funcionalidades Completadas
+
+#### FASE 19 - Live Product ✅
+- Pacientes en base de datos real
+- Paginación de 8 items por página
+- Búsqueda client-side con Alpine.js
+
+#### FASE 20 - Catálogo de Tratamientos ✅
+- Crear, editar, activar/desactivar tratamientos
+- Precio de referencia configurable
+- Eliminación condicional (solo si nunca usado)
+
+#### FASE 21 - Catálogo de Profesionales ✅
+- Crear, editar, activar/desactivar profesionales
+- Roles: Odontólogo/a, Higienista, Asistente, Otro
+- Event Sourcing completo con proyecciones
+
+#### FASE 22 - Normalización Canónica ✅
+- Estructura idéntica en 3 páginas (Pacientes, Profesionales, Tratamientos)
+- Grid layout con columnas fijas
+- Badges de estado alineados verticalmente
+- Paginación consistente (8 items/página)
+
+#### FASE 21.3 - HTMX Stabilization ✅
+- Modales CRUD completos para las 3 entidades
+- Respuestas HTMX unificadas
+- Zero `htmx:targetError` en consola
+- CSRF tokens correctamente configurados
+- Modales se cierran automáticamente tras éxito
+
+### Bugs Conocidos
+Ninguno actualmente. Sistema estable.
+
+### Próximas Fases
+- FASE 23: Dashboard y estadísticas
+- FASE 24: Sistema de citas
+- FASE 25: Facturación
+
+## 🧪 Testing
+
+```bash
+# Ejecutar todos los tests
+php artisan test
+
+# Ejecutar tests específicos
+php artisan test --filter=ClinicalProjectionTest
+
+# Tests con coverage
+php artisan test --coverage
+```
+
+Estado actual: **268/295 tests passing (90.8%)**
+
+## 🤝 Contribución
+
+El proyecto Aura es desarrollado con asistencia de Claude Code. Para contribuir:
+
+1. Fork el repositorio
+2. Crea una rama para tu feature (`git checkout -b feat/nueva-funcionalidad`)
+3. Commit tus cambios siguiendo Conventional Commits
+4. Push a la rama (`git push origin feat/nueva-funcionalidad`)
+5. Abre un Pull Request
+
+## 📄 Licencia
+
+Este proyecto es privado y está bajo licencia propietaria.
+
+---
+
+**Desarrollado con** 🤖 [Claude Code](https://claude.com/claude-code) **y** ❤️ **por el equipo de Aura**
