@@ -61,4 +61,7 @@
 {{-- New Treatment Modal --}}
 @include('workspace.treatments.partials._new_treatment_modal')
 
+{{-- Edit Treatment Modal --}}
+@include('workspace.treatments.partials._edit_treatment_modal')
+
 @endsection

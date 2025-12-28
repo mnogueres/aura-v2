@@ -61,4 +61,7 @@
 {{-- New Patient Modal --}}
 @include('patients.partials._new_patient_modal')
 
+{{-- Edit Patient Modal --}}
+@include('patients.partials._edit_patient_modal')
+
 @endsection

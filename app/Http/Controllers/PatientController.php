@@ -95,4 +95,49 @@ class PatientController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
     }
+
+    /**
+     * Update an existing patient (FASE 21.3 - canonical HTMX pattern).
+     */
+    public function update(Request $request, Patient $patient)
+    {
+        // Get clinic_id from context
+        $clinicId = app()->has('currentClinicId')
+            ? app('currentClinicId')
+            : \App\Models\Clinic::latest()->first()?->id ?? 1;
+
+        // Validate input
+        $validated = $request->validate([
+            'first_name' => 'sometimes|required|string|max:255',
+            'last_name' => 'sometimes|required|string|max:255',
+            'dni' => 'sometimes|required|string|max:20',
+        ]);
+
+        try {
+            // Update patient
+            $patient->update($validated);
+
+            // Return updated content (FASE 21.3 - canonical HTMX response)
+            $allPatients = Patient::where('clinic_id', $clinicId)
+                ->orderBy('last_name')
+                ->orderBy('first_name')
+                ->get()
+                ->map(function ($patient) {
+                    return [
+                        'id' => $patient->id,
+                        'name' => $patient->first_name . ' ' . $patient->last_name,
+                        'dni' => $patient->dni,
+                        'status' => 'Activo',
+                    ];
+                })
+                ->toArray();
+
+            // Get first page (8 items)
+            $patients = array_slice($allPatients, 0, 8);
+
+            return view('patients.partials._patients_content', compact('patients'));
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+    }
 }

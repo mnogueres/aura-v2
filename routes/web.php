@@ -18,6 +18,7 @@ Route::middleware('auth')->group(function () {
 });
 Route::get('/patients', [App\Http\Controllers\PatientController::class, 'index'])->name('patients.index');
 Route::post('/patients', [App\Http\Controllers\PatientController::class, 'store'])->name('patients.store');
+Route::patch('/patients/{patient}', [App\Http\Controllers\PatientController::class, 'update'])->name('patients.update');
 
 // Workspace routes
 Route::get('/workspace/patients/{patient}', [App\Http\Controllers\PatientWorkspaceController::class, 'show'])

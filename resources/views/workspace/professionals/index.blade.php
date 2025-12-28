@@ -61,4 +61,7 @@
 {{-- New Professional Modal --}}
 @include('workspace.professionals.partials._new_professional_modal', ['clinicId' => $clinicId])
 
+{{-- Edit Professional Modal --}}
+@include('workspace.professionals.partials._edit_professional_modal')
+
 @endsection
