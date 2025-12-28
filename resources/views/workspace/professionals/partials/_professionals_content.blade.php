@@ -88,6 +88,7 @@
                             : `/workspace/professionals/${professional.id}/activate`"
                         hx-target="#professionals-content"
                         hx-swap="outerHTML"
+                        hx-headers='{"X-CSRF-TOKEN": "{{ csrf_token() }}"}'
                         style="display: inline;"
                         @click.stop>
                         <button
