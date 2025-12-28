@@ -1,8 +1,8 @@
 # Aura — Project Status
 
 ## Última sesión
-Fecha: 2025-12-26
-Estado: FASE 19.1 completada - Paginación sin recarga con HTMX
+Fecha: 2025-12-28
+Estado: FASE 20.2-20.7 completadas - Workspace CQRS + Treatment Catalog + Auto-cálculo de importe
 
 ## Arquitectura validada
 - Multi-tenant por clinic_id (ClinicScope global)
@@ -39,6 +39,13 @@ Estado: FASE 19.1 completada - Paginación sin recarga con HTMX
 - FASE 18: Validation con datos reales (ValidationSeeder, walkthroughs)
 - FASE 19: Producto Vivo (eliminación ejemplos, estados vacíos, datos reales exclusivamente)
 - FASE 19.1: Paginación sin recarga (HTMX, sin scroll jump, interacción fluida)
+- FASE 20.2: Crear visitas desde Workspace (CQRS flow completo, comandos independientes)
+- FASE 20.3: Añadir tratamientos a visitas (AddTreatmentToVisit - comandos independientes)
+- FASE 20.4: Actualizar y eliminar tratamientos (UpdateTreatment, RemoveTreatment)
+- FASE 20.5: Catálogo de tratamientos (TreatmentDefinition, write model obligatorio)
+- FASE 20.6: Actualizar y eliminar visitas (UpdateVisit, RemoveVisit + UX sync fixes)
+- FASE 20.7: Gestión UI de catálogo de tratamientos (CRUD completo, Aura design, inline editing)
+- FASE 20.X: Auto-cálculo de importe por piezas (amount = base_price × teeth_count)
 
 ## Rate limits activos
 - api-read: 120/min
@@ -156,6 +163,167 @@ El Workspace del paciente muestra:
 
 **Estados vacíos:** Mensajes claros y humanos cuando no hay datos
 **Datos reales:** Solo información de base de datos, sin ejemplos ficticios
+
+## FASE 20 — Workspace CQRS completo + Treatment Catalog
+**Fecha:** 2025-12-27/28
+**Estado:** ✅ COMPLETADA
+
+### Objetivo
+Implementar flujo CQRS completo para gestión de visitas y tratamientos desde el Workspace, transformándolo de read-only a operativo con capacidad de escritura.
+
+### FASE 20.2 — Crear visitas desde Workspace
+**Implementación:**
+- Comando `CreateVisit` con CQRS flow completo
+- Evento `clinical.visit.created` emitido post-commit
+- Modal UI para crear visitas con HTMX
+- Proyector actualiza `clinical_visits` (read model)
+- Tests de integración para flujo completo
+
+**Arquitectura:**
+- Write model: `visits` table
+- Read model: `clinical_visits` table
+- Separación clara: comandos escriben, proyectores proyectan
+
+### FASE 20.3 — Añadir tratamientos (comandos independientes)
+**Implementación:**
+- `ClinicalTreatmentService::addTreatmentToVisit()`
+- Evento `clinical.treatment.added`
+- Modal UI con HTMX para añadir tratamientos a visitas existentes
+- Write model: `visit_treatments`
+- Read model: `clinical_treatments`
+
+**Flujo canónico:**
+```
+User → Controller → Service → Write Model → Event → Projector → Read Model
+```
+
+### FASE 20.4 — Actualizar y eliminar tratamientos
+**Implementación:**
+- `ClinicalTreatmentService::updateTreatment()`
+- `ClinicalTreatmentService::removeTreatmentFromVisit()`
+- Eventos: `clinical.treatment.updated`, `clinical.treatment.removed`
+- Edición inline con Aura design (sin confirmaciones de navegador)
+- Soft delete en write model, hard delete en read model
+
+**UX Fix:**
+- HTMX Out-of-Band swaps para sincronizar header de visita
+- Actualización automática de `treatments_count`
+- Sin recargas de página, flujo completamente asíncrono
+
+### FASE 20.5 — Catálogo de tratamientos (write model)
+**Implementación:**
+- Modelo `TreatmentDefinition` (write model, source of truth)
+- Campos: `name`, `default_price`, `active`
+- CRUD completo via `ClinicalTreatmentCatalogService`
+- Eventos: `treatment_definition.created/updated/deactivated/deleted`
+- Catálogo es OBLIGATORIO: no se permite entrada manual de tratamientos
+- Seeder con 25 tratamientos dentales comunes
+
+**Regla de negocio:**
+- El catálogo sugiere precios, pero el profesional decide el importe final por visita
+- Snapshot pattern: `type` y `amount` se copian a `visit_treatments` (no FK)
+
+### FASE 20.6 — Actualizar y eliminar visitas
+**Implementación:**
+- `ClinicalVisitService::updateVisit()`
+- `ClinicalVisitService::removeVisit()`
+- Eventos: `clinical.visit.updated`, `clinical.visit.removed`
+- Cascada: eliminar visita → elimina todos sus tratamientos
+- UX sync fix: actualización del header tras cualquier operación
+
+### FASE 20.7 — Gestión UI de catálogo de tratamientos
+**Implementación:**
+- Vista `/workspace/treatments` con listado completo
+- Inline editing estilo Aura (hover actions, sin modales pesados)
+- Crear, editar, desactivar tratamientos
+- Borrado condicional: solo si nunca se usó en ninguna visita
+- HTMX para todas las operaciones (sin recargas)
+
+**Características:**
+- Búsqueda/filtrado en tiempo real
+- Estados: activo/inactivo
+- Validación de uso antes de eliminar
+- Feedback visual inmediato (success/error)
+
+### FASE 20.X — Auto-cálculo de importe por piezas
+**Fecha:** 2025-12-28
+**Estado:** ✅ COMPLETADA
+
+**Objetivo:**
+Calcular automáticamente el importe basándose en el número de piezas dentales indicadas.
+
+**Fórmula:**
+```
+importe_sugerido = precio_base × max(1, número_de_piezas)
+```
+
+**Implementación:**
+- JavaScript con event delegation (compatible con HTMX)
+- Funciona en modal de añadir tratamiento
+- Funciona en edición inline de tratamientos
+- Cuenta piezas separadas por coma (ej: "16,23,57" → 3 piezas)
+- Respeta edición manual: si usuario edita importe, Aura deja de intervenir
+- Al modificar piezas → recalcula automáticamente (resetea flag manual)
+
+**Principio UX:**
+> "El catálogo sugiere. La visita decide. El profesional manda."
+
+**Fix crítico incluido:**
+- `treatment_definition_id` no se sincronizaba al read model
+- Agregado al evento `TreatmentAdded` payload
+- Actualizado `ClinicalTreatmentProjector` para copiar campo
+- Migración para agregar columna en `clinical_treatments`
+- Relación `treatmentDefinition()` en modelo `ClinicalTreatment`
+- Eager loading en repositorio (previene N+1 queries)
+- Migración de datos: 7 tratamientos existentes actualizados
+
+**Archivos modificados:**
+- `TreatmentAdded.php` - payload extendido
+- `ClinicalTreatmentService.php` - emit con treatment_definition_id
+- `ClinicalTreatmentProjector.php` - copia campo a read model
+- `ClinicalTreatment.php` - relación y fillable
+- `ClinicalTreatmentRepository.php` - eager loading
+- `_new_treatment_modal.blade.php` - JS auto-cálculo
+- `_visit_treatment_item.blade.php` - JS auto-cálculo inline
+- Migration: `add_treatment_definition_id_to_clinical_treatments_table`
+
+**Resultado:**
+- Usuario selecciona "Endodoncia (150€)"
+- Escribe piezas: "16,23,57" → importe se actualiza a 450€
+- Borra una pieza: "16,23" → importe se actualiza a 300€
+- Si edita importe manualmente a 280€ → Aura respeta y no recalcula
+- Si luego modifica piezas → vuelve a recalcular
+
+### Arquitectura CQRS consolidada
+
+**Write Side:**
+- `visits` table (source of truth para visitas)
+- `visit_treatments` table (source of truth para tratamientos)
+- `treatment_definitions` table (catálogo maestro)
+
+**Read Side:**
+- `clinical_visits` table (proyección optimizada para lectura)
+- `clinical_treatments` table (proyección con relaciones precargadas)
+- `clinical_treatment_definitions` table (proyección del catálogo)
+
+**Event Flow:**
+```
+Command → Service → Write Model → Event (outbox) → Consumer → Projector → Read Model
+```
+
+**Ventajas logradas:**
+- Escritura y lectura totalmente desacopladas
+- Proyecciones optimizadas para queries específicas
+- Idempotencia garantizada
+- Posibilidad de replay de eventos
+- Historial completo en outbox
+- Tests independientes de read/write
+
+### Tests implementados
+- `ClinicalTreatmentCatalogServiceTest.php` - 24 tests unitarios (CRUD catálogo)
+- `TreatmentCatalogIntegrationTest.php` - Tests de integración eventos
+- `TreatmentCatalogWorkspaceTest.php` - Tests UI workspace
+- Todos los tests en verde ✅
 
 ## Próxima fase prevista
 Pendiente de definición por el usuario

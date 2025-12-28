@@ -193,6 +193,102 @@ All events share this common envelope:
 
 ---
 
+## Clinical Domain (FASE 20)
+
+### clinical.visit.created
+
+**Class:** `App\Events\Clinical\VisitCreated`
+
+**Emitted when:** A new clinical visit is created
+
+**Emitted from:** `App\Services\ClinicalVisitService::createVisit()`
+
+**Payload:**
+```json
+{
+  "clinic_id": 1,
+  "visit_id": "uuid",
+  "patient_id": 123,
+  "occurred_at": "2025-12-27T10:30:00Z",
+  "notes": "Revisión periódica"
+}
+```
+
+### clinical.treatment.added
+
+**Class:** `App\Events\Clinical\TreatmentAdded`
+
+**Emitted when:** A treatment is added to an existing visit
+
+**Emitted from:** `App\Services\ClinicalTreatmentService::addTreatmentToVisit()`
+
+**Payload:**
+```json
+{
+  "clinic_id": 1,
+  "treatment_id": "uuid",
+  "visit_id": "uuid",
+  "patient_id": 123,
+  "treatment_definition_id": "uuid",
+  "type": "Endodoncia",
+  "tooth": "16",
+  "amount": "150.00",
+  "notes": "Molar superior derecho"
+}
+```
+
+**Note:** `treatment_definition_id` added in FASE 20.X to enable price auto-calculation based on catalog.
+
+### clinical.treatment.updated
+
+**Class:** `App\Events\Clinical\TreatmentUpdated`
+
+**Emitted when:** A treatment is updated
+
+**Emitted from:** `App\Services\ClinicalTreatmentService::updateTreatment()`
+
+### clinical.treatment.removed
+
+**Class:** `App\Events\Clinical\TreatmentRemoved`
+
+**Emitted when:** A treatment is removed from a visit
+
+**Emitted from:** `App\Services\ClinicalTreatmentService::removeTreatmentFromVisit()`
+
+### clinical.treatment_definition.created
+
+**Class:** `App\Events\Clinical\TreatmentDefinitionCreated`
+
+**Emitted when:** A new treatment is added to the catalog
+
+**Emitted from:** `App\Services\ClinicalTreatmentCatalogService::createTreatmentDefinition()`
+
+### clinical.treatment_definition.updated
+
+**Class:** `App\Events\Clinical\TreatmentDefinitionUpdated`
+
+**Emitted when:** A catalog treatment is updated
+
+**Emitted from:** `App\Services\ClinicalTreatmentCatalogService::updateTreatmentDefinition()`
+
+### clinical.treatment_definition.deactivated
+
+**Class:** `App\Events\Clinical\TreatmentDefinitionDeactivated`
+
+**Emitted when:** A catalog treatment is deactivated
+
+**Emitted from:** `App\Services\ClinicalTreatmentCatalogService::deactivateTreatmentDefinition()`
+
+### clinical.treatment_definition.deleted
+
+**Class:** `App\Events\Clinical\TreatmentDefinitionDeleted`
+
+**Emitted when:** A catalog treatment is deleted (only if never used)
+
+**Emitted from:** `App\Services\ClinicalTreatmentCatalogService::deleteTreatmentDefinition()`
+
+---
+
 ## Event Taxonomy Summary
 
 | Event | Domain | Class |
@@ -207,8 +303,16 @@ All events share this common envelope:
 | `platform.rate_limited` | Platform | `App\Events\Platform\RateLimited` |
 | `platform.idempotency.replayed` | Platform | `App\Events\Platform\IdempotencyReplayed` |
 | `platform.idempotency.conflict` | Platform | `App\Events\Platform\IdempotencyConflict` |
+| `clinical.visit.created` | Clinical | `App\Events\Clinical\VisitCreated` |
+| `clinical.treatment.added` | Clinical | `App\Events\Clinical\TreatmentAdded` |
+| `clinical.treatment.updated` | Clinical | `App\Events\Clinical\TreatmentUpdated` |
+| `clinical.treatment.removed` | Clinical | `App\Events\Clinical\TreatmentRemoved` |
+| `clinical.treatment_definition.created` | Clinical | `App\Events\Clinical\TreatmentDefinitionCreated` |
+| `clinical.treatment_definition.updated` | Clinical | `App\Events\Clinical\TreatmentDefinitionUpdated` |
+| `clinical.treatment_definition.deactivated` | Clinical | `App\Events\Clinical\TreatmentDefinitionDeactivated` |
+| `clinical.treatment_definition.deleted` | Clinical | `App\Events\Clinical\TreatmentDefinitionDeleted` |
 
-**Total Events:** 10
+**Total Events:** 18
 
 ---
 
