@@ -137,7 +137,7 @@ class TreatmentCatalogController extends Controller
     /**
      * Update an existing treatment definition (FASE 20.7 BLOQUE 3).
      */
-    public function update(Request $request, string $treatmentDefinition)
+    public function update(Request $request, TreatmentDefinition $treatmentDefinition)
     {
         // Validate input
         $validated = $request->validate([
@@ -147,7 +147,7 @@ class TreatmentCatalogController extends Controller
 
         try {
             // Use domain service (CQRS write side)
-            $this->catalogService->updateTreatmentDefinition($treatmentDefinition, $validated);
+            $this->catalogService->updateTreatmentDefinition($treatmentDefinition->id, $validated);
 
             // Process outbox events immediately for instant projection
             $this->outboxConsumer->processPendingEvents();
@@ -178,23 +178,16 @@ class TreatmentCatalogController extends Controller
     /**
      * Toggle active status of a treatment definition (FASE 20.7 BLOQUE 4).
      */
-    public function toggleActive(string $treatmentDefinition)
+    public function toggleActive(TreatmentDefinition $treatmentDefinition)
     {
         try {
-            // Get the current treatment definition
-            $definition = \App\Models\TreatmentDefinition::withTrashed()->find($treatmentDefinition);
-
-            if (!$definition) {
-                abort(404, 'Treatment definition not found');
-            }
-
             // Toggle: if active, deactivate; if inactive, reactivate
-            if ($definition->active) {
+            if ($treatmentDefinition->active) {
                 // Deactivate using domain service
-                $this->catalogService->deactivateTreatmentDefinition($treatmentDefinition);
+                $this->catalogService->deactivateTreatmentDefinition($treatmentDefinition->id);
             } else {
                 // Reactivate: update active = true
-                $this->catalogService->updateTreatmentDefinition($treatmentDefinition, [
+                $this->catalogService->updateTreatmentDefinition($treatmentDefinition->id, [
                     'active' => true,
                 ]);
             }
@@ -231,11 +224,11 @@ class TreatmentCatalogController extends Controller
      * CRITICAL: Can ONLY delete if NEVER used in any visit.
      * If used, domain service will throw exception.
      */
-    public function destroy(string $treatmentDefinition)
+    public function destroy(TreatmentDefinition $treatmentDefinition)
     {
         try {
             // Use domain service to delete (includes usage validation)
-            $this->catalogService->deleteTreatmentDefinition($treatmentDefinition);
+            $this->catalogService->deleteTreatmentDefinition($treatmentDefinition->id);
 
             // Process outbox events immediately for instant projection
             $this->outboxConsumer->processPendingEvents();

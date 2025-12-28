@@ -300,7 +300,7 @@ class PatientWorkspaceController extends Controller
      * Internal write endpoint - NOT part of public API v1.
      * Returns only the updated treatment (outerHTML swap) to preserve list order.
      */
-    public function updateTreatment(Request $request, string $treatmentId)
+    public function updateTreatment(Request $request, VisitTreatment $treatment)
     {
         // Validate input
         $validated = $request->validate([
@@ -312,22 +312,25 @@ class PatientWorkspaceController extends Controller
 
         try {
             // Use ClinicalTreatmentService (CQRS write side)
-            $writeTreatment = $this->clinicalTreatmentService->updateTreatment($treatmentId, $validated);
+            $writeTreatment = $this->clinicalTreatmentService->updateTreatment($treatment->id, $validated);
 
             // Process outbox events immediately for instant projection
             $this->outboxConsumer->processPendingEvents();
 
             // HTMX response: return only the updated treatment (outerHTML swap)
             // This preserves the treatment's position in the list (no reordering)
-            $treatment = \App\Models\ClinicalTreatment::find($treatmentId);
+            $treatmentProjection = \App\Models\ClinicalTreatment::find($treatment->id);
 
-            if (!$treatment) {
+            if (!$treatmentProjection) {
                 abort(404, 'Treatment projection not found');
             }
 
             $visitId = $treatment->visit_id;
 
-            return view('workspace.patient.partials._visit_treatment_item', compact('treatment', 'visitId'));
+            return view('workspace.patient.partials._visit_treatment_item', [
+                'treatment' => $treatmentProjection,
+                'visitId' => $visitId
+            ]);
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
@@ -341,20 +344,13 @@ class PatientWorkspaceController extends Controller
      * FASE 20.6 bug fix: Returns OOB swap to update visit header
      * (syncs treatments_count so delete visit button enables correctly)
      */
-    public function deleteTreatment(string $treatmentId)
+    public function deleteTreatment(VisitTreatment $treatment)
     {
         try {
-            // Get visit_id before deletion (use withTrashed to check if already deleted)
-            $treatment = \App\Models\VisitTreatment::withTrashed()->find($treatmentId);
-
-            if (!$treatment) {
-                abort(404, 'Treatment not found');
-            }
-
             $visitId = $treatment->visit_id;
 
             // Use ClinicalTreatmentService (CQRS write side)
-            $this->clinicalTreatmentService->removeTreatmentFromVisit($treatmentId);
+            $this->clinicalTreatmentService->removeTreatmentFromVisit($treatment->id);
 
             // Process outbox events immediately for instant projection
             $this->outboxConsumer->processPendingEvents();
@@ -386,7 +382,7 @@ class PatientWorkspaceController extends Controller
      *
      * Internal write endpoint - NOT part of public API v1.
      */
-    public function updateVisit(Request $request, string $visitId)
+    public function updateVisit(Request $request, Visit $visit)
     {
         // Validate input (FASE 21.1: professional_id now references professionals table with UUID)
         $validated = $request->validate([
@@ -397,17 +393,11 @@ class PatientWorkspaceController extends Controller
         ]);
 
         try {
-            // Check visit exists before calling service
-            $visit = \App\Models\Visit::withTrashed()->find($visitId);
-            if (!$visit) {
-                abort(404, 'Visit not found');
-            }
-
             $patientId = $visit->patient_id;
             $clinicId = $visit->clinic_id;
 
             // Use ClinicalVisitService (CQRS write side)
-            $this->clinicalVisitService->updateVisit($visitId, $validated);
+            $this->clinicalVisitService->updateVisit($visit->id, $validated);
 
             // Process outbox events immediately for instant projection
             $this->outboxConsumer->processPendingEvents();
@@ -464,22 +454,15 @@ class PatientWorkspaceController extends Controller
      * Internal write endpoint - NOT part of public API v1.
      * CRITICAL: Blocks deletion if visit has treatments.
      */
-    public function deleteVisit(string $visitId)
+    public function deleteVisit(Visit $visit)
     {
         try {
-            // Get patient_id and clinic_id before deletion
-            $visit = \App\Models\Visit::withTrashed()->find($visitId);
-
-            if (!$visit) {
-                abort(404, 'Visit not found');
-            }
-
             $patientId = $visit->patient_id;
             $clinicId = $visit->clinic_id;
 
             // Use ClinicalVisitService (CQRS write side)
             // This will throw DomainException if visit has treatments
-            $this->clinicalVisitService->removeVisit($visitId);
+            $this->clinicalVisitService->removeVisit($visit->id);
 
             // Process outbox events immediately for instant projection
             $this->outboxConsumer->processPendingEvents();

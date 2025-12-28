@@ -80,7 +80,7 @@ class ProfessionalWorkspaceController extends Controller
     /**
      * Update an existing professional.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Professional $professional)
     {
         $clinicId = app()->has('currentClinicId')
             ? app('currentClinicId')
@@ -93,7 +93,7 @@ class ProfessionalWorkspaceController extends Controller
         ]);
 
         try {
-            $professional = $this->service->updateProfessional($id, $validated);
+            $this->service->updateProfessional($professional->id, $validated);
 
             // Process outbox events immediately
             $this->outboxConsumer->processPendingEvents();
@@ -112,14 +112,14 @@ class ProfessionalWorkspaceController extends Controller
     /**
      * Deactivate a professional.
      */
-    public function deactivate(string $id)
+    public function deactivate(Professional $professional)
     {
         $clinicId = app()->has('currentClinicId')
             ? app('currentClinicId')
             : \App\Models\Clinic::latest()->first()?->id ?? 1;
 
         try {
-            $this->service->deactivateProfessional($id);
+            $this->service->deactivateProfessional($professional->id);
 
             // Process outbox events immediately
             $this->outboxConsumer->processPendingEvents();
@@ -138,7 +138,7 @@ class ProfessionalWorkspaceController extends Controller
     /**
      * Activate a professional (reverse of deactivate).
      */
-    public function activate(string $id)
+    public function activate(Professional $professional)
     {
         $clinicId = app()->has('currentClinicId')
             ? app('currentClinicId')
@@ -146,7 +146,7 @@ class ProfessionalWorkspaceController extends Controller
 
         try {
             // Use updateProfessional to set active = true
-            $this->service->updateProfessional($id, ['active' => true]);
+            $this->service->updateProfessional($professional->id, ['active' => true]);
 
             // Process outbox events immediately
             $this->outboxConsumer->processPendingEvents();

@@ -38,6 +38,15 @@ class Professional extends Model
         static::addGlobalScope(new ClinicScope);
     }
 
+    /**
+     * Get the route key name for Laravel route model binding.
+     * Required for UUID primary keys.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'id';
+    }
+
     public function clinic()
     {
         return $this->belongsTo(Clinic::class);
