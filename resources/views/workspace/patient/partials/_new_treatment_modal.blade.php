@@ -23,8 +23,9 @@
                     id="catalog-{{ $visitId }}"
                     name="treatment_definition_id"
                     required
+                    class="treatment-catalog-select"
+                    data-amount-target="amount-{{ $visitId }}"
                     style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; margin-bottom: 0.5rem;"
-                    onchange="handleCatalogSelection_{{ $visitId }}(this)"
                 >
                     <option value="">-- Seleccionar tratamiento --</option>
                     @foreach($treatmentDefinitions as $definition)
@@ -41,7 +42,8 @@
                 {{-- FASE 20.X: Quick create new treatment --}}
                 <button
                     type="button"
-                    onclick="toggleQuickCreateTreatment_{{ $visitId }}()"
+                    class="toggle-quick-create"
+                    data-target="quick-create-{{ $visitId }}"
                     style="padding: 0.375rem 0.625rem; background: transparent; color: #0ea5e9; border: 1px solid #0ea5e9; border-radius: 4px; font-size: 0.8125rem; cursor: pointer; width: 100%;"
                 >
                     + Crear nuevo tratamiento
@@ -77,14 +79,17 @@
                     <div style="display: flex; gap: 0.5rem;">
                         <button
                             type="button"
-                            onclick="saveQuickCreateTreatment_{{ $visitId }}()"
+                            class="save-quick-create"
+                            data-visit-id="{{ $visitId }}"
+                            data-catalog-select="catalog-{{ $visitId }}"
                             style="flex: 1; padding: 0.375rem 0.75rem; background: #0ea5e9; color: white; border: none; border-radius: 4px; font-size: 0.8125rem; cursor: pointer;"
                         >
                             Guardar en catálogo
                         </button>
                         <button
                             type="button"
-                            onclick="toggleQuickCreateTreatment_{{ $visitId }}()"
+                            class="toggle-quick-create"
+                            data-target="quick-create-{{ $visitId }}"
                             style="flex: 1; padding: 0.375rem 0.75rem; background: transparent; color: #64748b; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.8125rem; cursor: pointer;"
                         >
                             Cancelar
@@ -157,103 +162,213 @@
 </div>
 
 <script>
-// FASE 20.X: Handle catalog selection (REQUIRED - no manual entry)
-function handleCatalogSelection_{{ $visitId }}(select) {
-    const selectedOption = select.options[select.selectedIndex];
-    const amountInput = document.getElementById('amount-{{ $visitId }}');
+// FASE 20.X: Event delegation global para HTMX compatibility
+(function() {
+    'use strict';
 
-    if (selectedOption.value) {
-        // Catalog item selected: populate amount if available
-        const price = selectedOption.getAttribute('data-price');
-        // Always set the price (even if empty) to show what will be used
-        if (price && price !== '' && price !== 'null') {
-            amountInput.value = price;
-        } else {
-            // Clear but user must enter amount
-            amountInput.value = '';
-        }
-        // User can still edit amount for this specific visit
-    } else {
-        // No selection: clear amount
-        amountInput.value = '';
-    }
-}
+    // Track manual edits per visit modal (usando Map para multi-modal support)
+    const amountManuallyEdited = new Map();
+    const baseAmounts = new Map(); // Store base amount per visit
+    const isProgrammaticUpdate = new Map(); // Flag to prevent marking programmatic updates as manual edits
 
-// FASE 20.X: Toggle quick create treatment form
-function toggleQuickCreateTreatment_{{ $visitId }}() {
-    const quickCreate = document.getElementById('quick-create-{{ $visitId }}');
-    const isHidden = quickCreate.style.display === 'none';
-
-    quickCreate.style.display = isHidden ? 'block' : 'none';
-
-    if (isHidden) {
-        // Clear form
-        document.getElementById('quick-name-{{ $visitId }}').value = '';
-        document.getElementById('quick-price-{{ $visitId }}').value = '';
-    }
-}
-
-// FASE 20.X: Save quick create treatment to catalog
-function saveQuickCreateTreatment_{{ $visitId }}() {
-    const name = document.getElementById('quick-name-{{ $visitId }}').value.trim();
-    const price = document.getElementById('quick-price-{{ $visitId }}').value;
-
-    if (!name) {
-        alert('El nombre del tratamiento es obligatorio');
-        return;
+    // Utility: Count teeth from string (ej: "16,23,57" → 3)
+    function countTeeth(toothString) {
+        if (!toothString || toothString.trim() === '') return 0;
+        const teeth = toothString.split(',')
+            .map(t => t.trim())
+            .filter(t => t !== '');
+        return teeth.length;
     }
 
-    // Create treatment in catalog via AJAX
-    fetch('{{ route('workspace.treatments.store') }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('[name="_token"]').value,
-            'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-            name: name,
-            default_price: price || null
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Add new treatment to select
-            const select = document.getElementById('catalog-{{ $visitId }}');
-            const option = document.createElement('option');
-            option.value = data.treatment.id;
-            option.setAttribute('data-name', data.treatment.name);
-            option.setAttribute('data-price', data.treatment.default_price || '');
-            option.text = data.treatment.name; // Only name, no price in parentheses
+    // Utility: Calculate suggested amount based on base price and teeth count
+    function calculateSuggestedAmount(baseAmount, teethCount) {
+        const multiplier = Math.max(1, teethCount);
+        return baseAmount * multiplier;
+    }
 
-            // Insert alphabetically
-            let inserted = false;
-            for (let i = 1; i < select.options.length; i++) {
-                if (select.options[i].text > option.text) {
-                    select.insertBefore(option, select.options[i]);
-                    inserted = true;
-                    break;
+    // Handler para catalog selection - HTMX compatible via event delegation
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('treatment-catalog-select')) {
+            const select = e.target;
+            const selectedOption = select.options[select.selectedIndex];
+            const amountTargetId = select.getAttribute('data-amount-target');
+            const amountInput = document.getElementById(amountTargetId);
+
+            if (!amountInput) return;
+
+            // Extract visitId from amount input id (ej: "amount-{visitId}")
+            const visitId = amountTargetId.replace('amount-', '');
+
+            if (selectedOption.value) {
+                const price = selectedOption.getAttribute('data-price');
+                if (price && price !== '' && price !== 'null') {
+                    const numPrice = parseFloat(price);
+                    if (!isNaN(numPrice) && numPrice > 0) {
+                        // Store base amount for this visit
+                        baseAmounts.set(visitId, numPrice);
+
+                        // Get tooth input to calculate multiplier
+                        const toothInput = document.getElementById('tooth-' + visitId);
+                        const teethCount = toothInput ? countTeeth(toothInput.value) : 0;
+
+                        // Calculate suggested amount
+                        const suggestedAmount = calculateSuggestedAmount(numPrice, teethCount);
+
+                        // Mark as programmatic update to prevent triggering manual edit flag
+                        isProgrammaticUpdate.set(visitId, true);
+                        amountInput.value = suggestedAmount.toFixed(2);
+                        // Reset flag after event has been processed
+                        setTimeout(() => isProgrammaticUpdate.set(visitId, false), 0);
+
+                        // Reset manual edit flag when selecting new treatment
+                        amountManuallyEdited.set(visitId, false);
+                    } else {
+                        amountInput.value = '';
+                        baseAmounts.delete(visitId);
+                    }
+                } else {
+                    amountInput.value = '';
+                    baseAmounts.delete(visitId);
                 }
+            } else {
+                amountInput.value = '';
+                baseAmounts.delete(visitId);
+                amountManuallyEdited.delete(visitId);
             }
-            if (!inserted) {
-                select.add(option);
-            }
-
-            // Select the newly created treatment
-            select.value = data.treatment.id;
-
-            // Trigger change event to populate amount
-            select.dispatchEvent(new Event('change'));
-
-            // Hide quick create form
-            toggleQuickCreateTreatment_{{ $visitId }}();
-        } else {
-            alert('Error al crear tratamiento: ' + (data.error || 'Error desconocido'));
         }
-    })
-    .catch(error => {
-        alert('Error al crear tratamiento: ' + error.message);
     });
-}
+
+    // Handler para tooth input - recalculate amount when teeth change
+    document.addEventListener('input', function(e) {
+        if (e.target.id && e.target.id.startsWith('tooth-')) {
+            const visitId = e.target.id.replace('tooth-', '');
+            const amountInput = document.getElementById('amount-' + visitId);
+            const baseAmount = baseAmounts.get(visitId);
+
+            // ALWAYS recalculate when user modifies teeth
+            // If user changes teeth, they want Aura to recalculate
+            if (amountInput && baseAmount) {
+                const teethCount = countTeeth(e.target.value);
+                const suggestedAmount = calculateSuggestedAmount(baseAmount, teethCount);
+
+                // Mark as programmatic update to prevent triggering manual edit flag
+                isProgrammaticUpdate.set(visitId, true);
+                amountInput.value = suggestedAmount.toFixed(2);
+                // Reset flag after event has been processed
+                setTimeout(() => isProgrammaticUpdate.set(visitId, false), 0);
+
+                // Reset manual edit flag - user is asking for recalculation
+                amountManuallyEdited.set(visitId, false);
+            }
+        }
+
+        // Handler para amount input - mark as manually edited
+        if (e.target.id && e.target.id.startsWith('amount-')) {
+            const visitId = e.target.id.replace('amount-', '');
+
+            // Only mark as manual edit if this is NOT a programmatic update
+            if (!isProgrammaticUpdate.get(visitId)) {
+                // Mark that user has manually edited the amount
+                // From now on, Aura won't recalculate automatically
+                amountManuallyEdited.set(visitId, true);
+            }
+        }
+    });
+
+    // Handler para toggle quick create
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('toggle-quick-create')) {
+            const targetId = e.target.getAttribute('data-target');
+            const quickCreate = document.getElementById(targetId);
+            if (!quickCreate) return;
+
+            const isHidden = quickCreate.style.display === 'none';
+            quickCreate.style.display = isHidden ? 'block' : 'none';
+
+            if (isHidden) {
+                // Clear form when opening
+                const visitId = targetId.replace('quick-create-', '');
+                const nameInput = document.getElementById('quick-name-' + visitId);
+                const priceInput = document.getElementById('quick-price-' + visitId);
+                if (nameInput) nameInput.value = '';
+                if (priceInput) priceInput.value = '';
+            }
+        }
+    });
+
+    // Handler para save quick create
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('save-quick-create')) {
+            const visitId = e.target.getAttribute('data-visit-id');
+            const catalogSelectId = e.target.getAttribute('data-catalog-select');
+
+            const nameInput = document.getElementById('quick-name-' + visitId);
+            const priceInput = document.getElementById('quick-price-' + visitId);
+
+            if (!nameInput) return;
+
+            const name = nameInput.value.trim();
+            const price = priceInput ? priceInput.value : '';
+
+            if (!name) {
+                alert('El nombre del tratamiento es obligatorio');
+                return;
+            }
+
+            // Create treatment in catalog via AJAX
+            fetch('{{ route('workspace.treatments.store') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('[name="_token"]').value,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    default_price: price || null
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById(catalogSelectId);
+                    if (select) {
+                        const option = document.createElement('option');
+                        option.value = data.treatment.id;
+                        option.setAttribute('data-price', data.treatment.default_price || '');
+                        option.text = data.treatment.name;
+
+                        // Insert alphabetically
+                        let inserted = false;
+                        for (let i = 1; i < select.options.length; i++) {
+                            if (select.options[i].text > option.text) {
+                                select.insertBefore(option, select.options[i]);
+                                inserted = true;
+                                break;
+                            }
+                        }
+                        if (!inserted) {
+                            select.add(option);
+                        }
+
+                        // Select the newly created treatment
+                        select.value = data.treatment.id;
+
+                        // Trigger change event to populate amount
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+
+                    // Hide quick create form
+                    const quickCreate = document.getElementById('quick-create-' + visitId);
+                    if (quickCreate) quickCreate.style.display = 'none';
+                } else {
+                    alert('Error al crear tratamiento: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                alert('Error al crear tratamiento: ' + error.message);
+            });
+        }
+    });
+})();
 </script>

@@ -15,6 +15,7 @@ use App\Events\DomainEvent;
  *   "treatment_id": "uuid",
  *   "visit_id": "uuid",
  *   "patient_id": 123,
+ *   "treatment_definition_id": "uuid",  // FASE 20.5+
  *   "type": "Empaste",
  *   "tooth": "16",
  *   "amount": "65.00",
@@ -32,6 +33,7 @@ class TreatmentAdded extends DomainEvent
         ?string $tooth = null,
         ?string $amount = null,
         ?string $notes = null,
+        ?string $treatment_definition_id = null,  // FASE 20.5+
         ?string $request_id = null,
         ?int $user_id = null
     ) {
@@ -42,6 +44,7 @@ class TreatmentAdded extends DomainEvent
                 'treatment_id' => $treatment_id,
                 'visit_id' => $visit_id,
                 'patient_id' => $patient_id,
+                'treatment_definition_id' => $treatment_definition_id,  // FASE 20.5+
                 'type' => $type,
                 'tooth' => $tooth,
                 'amount' => $amount,

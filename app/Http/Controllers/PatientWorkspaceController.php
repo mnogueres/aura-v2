@@ -235,6 +235,9 @@ class PatientWorkspaceController extends Controller
      */
     public function storeTreatment(Request $request, string $visitId)
     {
+        // DEBUG: Log request data
+        \Log::info('storeTreatment REQUEST:', $request->all());
+
         // Validate input (FASE 20.X: catalog is REQUIRED)
         $validated = $request->validate([
             'treatment_definition_id' => 'required|uuid|exists:treatment_definitions,id', // FASE 20.X: REQUIRED
@@ -242,6 +245,8 @@ class PatientWorkspaceController extends Controller
             'amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
         ]);
+
+        \Log::info('storeTreatment VALIDATED:', $validated);
 
         try {
             // Use ClinicalTreatmentService (CQRS write side)
@@ -269,6 +274,7 @@ class PatientWorkspaceController extends Controller
             // Return treatments + OOB swap for visit header (syncs treatments_count)
             return view('workspace.patient.partials._visit_treatments_with_header', compact('clinicalVisit'));
         } catch (\DomainException $e) {
+            \Log::error('storeTreatment DomainException: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 422);
         }
     }

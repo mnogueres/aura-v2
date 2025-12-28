@@ -40,11 +40,28 @@ class ClinicalTreatmentService
      */
     public function addTreatmentToVisit(string $visitId, array $treatmentData): VisitTreatment
     {
-        // Validate visit exists
+        // FASE 20.X FIX: Try write model first, fallback to read model
+        // (temporary until all visits are created via proper CQRS flow)
         $visit = Visit::find($visitId);
 
         if (!$visit) {
-            throw new \DomainException('Visit not found');
+            // Fallback: get from read model and backfill to write model
+            $clinicalVisit = \App\Models\ClinicalVisit::find($visitId);
+            if (!$clinicalVisit) {
+                throw new \DomainException('Visit not found');
+            }
+
+            // TEMPORARY BACKFILL: Create visit in write model to satisfy FK constraint
+            // This is needed because some visits were created directly in read model
+            \Log::warning("BACKFILL: Creating visit {$visitId} in write model from read model");
+
+            $visit = new Visit();
+            $visit->id = $clinicalVisit->id; // UUID must be set before save
+            $visit->clinic_id = $clinicalVisit->clinic_id;
+            $visit->patient_id = $clinicalVisit->patient_id;
+            $visit->occurred_at = $clinicalVisit->occurred_at;
+            $visit->summary = $clinicalVisit->notes; // Map notes -> summary
+            $visit->save();
         }
 
         // Domain validations (checks treatment_definition_id is present)
@@ -76,7 +93,8 @@ class ClinicalTreatmentService
                     type: $treatment->type,
                     tooth: $treatment->tooth,
                     amount: $treatment->amount,
-                    notes: $treatment->notes
+                    notes: $treatment->notes,
+                    treatment_definition_id: $treatment->treatment_definition_id  // FASE 20.5+
                 )
             );
 

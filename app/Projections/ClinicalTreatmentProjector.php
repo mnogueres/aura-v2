@@ -82,6 +82,7 @@ class ClinicalTreatmentProjector
                 'clinic_id' => $event->payload['clinic_id'],
                 'patient_id' => $event->payload['patient_id'],
                 'visit_id' => $event->payload['visit_id'],
+                'treatment_definition_id' => $event->payload['treatment_definition_id'] ?? null,  // FASE 20.5+
                 'type' => $event->payload['type'],
                 'tooth' => $event->payload['tooth'],
                 'amount' => $event->payload['amount'],

@@ -19,6 +19,7 @@ class ClinicalTreatmentRepository
     public function getTreatmentsForVisit(string $visitId): Collection
     {
         return ClinicalTreatment::where('visit_id', $visitId)
+            ->with('treatmentDefinition')  // FASE 20.5+: Load for price recalculation
             ->orderBy('created_at')
             ->get();
     }

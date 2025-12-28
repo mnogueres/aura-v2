@@ -22,6 +22,7 @@ class ClinicalTreatment extends Model
         'clinic_id',
         'patient_id',
         'visit_id',
+        'treatment_definition_id',  // FASE 20.5+
         'type',
         'tooth',
         'amount',
@@ -40,5 +41,10 @@ class ClinicalTreatment extends Model
     public function visit()
     {
         return $this->belongsTo(ClinicalVisit::class, 'visit_id');
+    }
+
+    public function treatmentDefinition()
+    {
+        return $this->belongsTo(TreatmentDefinition::class, 'treatment_definition_id');
     }
 }
