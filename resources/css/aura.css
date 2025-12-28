@@ -282,9 +282,10 @@ body {
 }
 
 .aura-patient-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 110px 80px;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: var(--aura-space-3) var(--aura-space-5);
   background: var(--aura-bg-surface);
   border: 1px solid var(--aura-border-light);
@@ -304,6 +305,20 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--aura-space-2);
+  min-width: 0;
+}
+
+.aura-row__status {
+  display: flex;
+  justify-content: center;
+  width: 110px;
+}
+
+.aura-row__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 80px;
 }
 
 /* Legibilidad mejorada: color base (no secondary) */

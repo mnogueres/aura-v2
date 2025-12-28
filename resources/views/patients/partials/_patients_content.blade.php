@@ -31,28 +31,23 @@
                 x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="opacity-0 transform scale-95"
                 x-transition:enter-end="opacity-100 transform scale-100"
-                style="cursor: pointer; position: relative;"
+                style="cursor: pointer;"
                 @click="window.location.href = `/workspace/patients/${patient.id}`"
-                @mouseenter="$el.querySelector('.aura-item-actions').style.opacity = '1'"
-                @mouseleave="$el.querySelector('.aura-item-actions').style.opacity = '0'">
+                @mouseenter="$el.querySelector('.aura-row__actions').style.opacity = '1'"
+                @mouseleave="$el.querySelector('.aura-row__actions').style.opacity = '0'">
                 <div class="aura-patient-main">
                     <h3 class="aura-patient-name" x-text="patient.name"></h3>
                     <span class="aura-patient-dni" x-text="patient.dni"></span>
                 </div>
-                <span
-                    class="aura-status-badge"
-                    :class="patient.status === 'Activo' ? 'active' : 'inactive'"
-                    x-text="patient.status"></span>
 
-                <!-- Action Buttons (visible on hover) -->
-                <div class="aura-item-actions" style="
-                    display: flex;
-                    gap: 0.5rem;
-                    opacity: 0;
-                    transition: opacity 0.15s ease;
-                    margin-left: 1rem;
-                ">
-                    <!-- Edit Button -->
+                <div class="aura-row__status">
+                    <span
+                        class="aura-status-badge"
+                        :class="patient.status === 'Activo' ? 'active' : 'inactive'"
+                        x-text="patient.status"></span>
+                </div>
+
+                <div class="aura-row__actions" style="opacity: 0; transition: opacity 0.15s ease;">
                     <button
                         @click.stop="openEditPatientModal(patient.id, patient.name, patient.dni)"
                         style="

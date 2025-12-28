@@ -48,27 +48,22 @@
                 x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="opacity-0 transform scale-95"
                 x-transition:enter-end="opacity-100 transform scale-100"
-                style="cursor: default; position: relative;"
-                @mouseenter="$el.querySelector('.aura-item-actions').style.opacity = '1'"
-                @mouseleave="$el.querySelector('.aura-item-actions').style.opacity = '0'">
+                style="cursor: default;"
+                @mouseenter="$el.querySelector('.aura-row__actions').style.opacity = '1'"
+                @mouseleave="$el.querySelector('.aura-row__actions').style.opacity = '0'">
                 <div class="aura-patient-main">
                     <h3 class="aura-patient-name" x-text="professional.name"></h3>
                     <span class="aura-patient-dni" x-text="getRoleLabel(professional.role)"></span>
                 </div>
-                <span
-                    class="aura-status-badge"
-                    :class="professional.status === 'Activo' ? 'active' : 'inactive'"
-                    x-text="professional.status"></span>
 
-                <!-- Action Buttons (visible on hover) -->
-                <div class="aura-item-actions" style="
-                    display: flex;
-                    gap: 0.5rem;
-                    opacity: 0;
-                    transition: opacity 0.15s ease;
-                    margin-left: 1rem;
-                ">
-                    <!-- Edit Button -->
+                <div class="aura-row__status">
+                    <span
+                        class="aura-status-badge"
+                        :class="professional.status === 'Activo' ? 'active' : 'inactive'"
+                        x-text="professional.status"></span>
+                </div>
+
+                <div class="aura-row__actions" style="opacity: 0; transition: opacity 0.15s ease;">
                     <button
                         @click.stop="openEditProfessionalModal(professional.id, professional.name, professional.role)"
                         style="
@@ -87,7 +82,6 @@
                         ✎
                     </button>
 
-                    <!-- Toggle Active Button -->
                     <form
                         :hx-patch="professional.active
                             ? `/workspace/professionals/${professional.id}/deactivate`
