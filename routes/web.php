@@ -46,6 +46,18 @@ Route::patch('/workspace/treatment-definitions/{treatmentDefinition}/toggle-acti
 Route::delete('/workspace/treatment-definitions/{treatmentDefinition}', [App\Http\Controllers\TreatmentCatalogController::class, 'destroy'])
     ->name('workspace.treatment-definitions.destroy');
 
+// FASE 21.0: Professional Catalog routes (workspace management)
+Route::get('/workspace/professionals', [App\Http\Controllers\ProfessionalWorkspaceController::class, 'index'])
+    ->name('workspace.professionals.index');
+Route::post('/workspace/professionals', [App\Http\Controllers\ProfessionalWorkspaceController::class, 'store'])
+    ->name('workspace.professionals.store');
+Route::patch('/workspace/professionals/{professional}', [App\Http\Controllers\ProfessionalWorkspaceController::class, 'update'])
+    ->name('workspace.professionals.update');
+Route::patch('/workspace/professionals/{professional}/deactivate', [App\Http\Controllers\ProfessionalWorkspaceController::class, 'deactivate'])
+    ->name('workspace.professionals.deactivate');
+Route::patch('/workspace/professionals/{professional}/activate', [App\Http\Controllers\ProfessionalWorkspaceController::class, 'activate'])
+    ->name('workspace.professionals.activate');
+
 // API Documentation (dev-only)
 Route::get('/docs/api', [App\Http\Controllers\SwaggerController::class, 'index'])
     ->name('docs.api');

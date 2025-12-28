@@ -175,6 +175,9 @@ class OutboxEventConsumer
             'clinical.treatment_definition.updated' => $this->dispatchToTreatmentDefinitionUpdatedProjector($outboxEvent),
             'clinical.treatment_definition.deactivated' => $this->dispatchToTreatmentDefinitionDeactivatedProjector($outboxEvent),
             'clinical.treatment_definition.deleted' => $this->dispatchToTreatmentDefinitionDeletedProjector($outboxEvent),
+            'clinical.professional.created' => $this->dispatchToProfessionalCreatedProjector($outboxEvent),
+            'clinical.professional.updated' => $this->dispatchToProfessionalUpdatedProjector($outboxEvent),
+            'clinical.professional.deactivated' => $this->dispatchToProfessionalDeactivatedProjector($outboxEvent),
             'billing.invoice.created', 'billing.invoice.issued', 'billing.invoice.paid' =>
                 $this->dispatchToBillingProjectors($outboxEvent),
             'billing.payment.recorded', 'billing.payment.applied', 'billing.payment.unlinked' =>
@@ -518,6 +521,86 @@ class OutboxEventConsumer
         return new \App\Events\Clinical\TreatmentDefinitionDeleted(
             clinic_id: $p['clinic_id'],
             treatment_definition_id: $p['treatment_definition_id'],
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Dispatch clinical.professional.created to projector (FASE 21.0).
+     */
+    private function dispatchToProfessionalCreatedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateProfessionalCreated($outboxEvent);
+        app(\App\Projections\ClinicalProfessionalProjector::class)->handleProfessionalCreated($event);
+    }
+
+    /**
+     * Dispatch clinical.professional.updated to projector (FASE 21.0).
+     */
+    private function dispatchToProfessionalUpdatedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateProfessionalUpdated($outboxEvent);
+        app(\App\Projections\ClinicalProfessionalProjector::class)->handleProfessionalUpdated($event);
+    }
+
+    /**
+     * Dispatch clinical.professional.deactivated to projector (FASE 21.0).
+     */
+    private function dispatchToProfessionalDeactivatedProjector(EventOutbox $outboxEvent): void
+    {
+        $event = $this->rehydrateProfessionalDeactivated($outboxEvent);
+        app(\App\Projections\ClinicalProfessionalProjector::class)->handleProfessionalDeactivated($event);
+    }
+
+    /**
+     * Rehydrate ProfessionalCreated event from outbox (FASE 21.0).
+     */
+    private function rehydrateProfessionalCreated(EventOutbox $outboxEvent): \App\Events\Clinical\ProfessionalCreated
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\ProfessionalCreated(
+            clinic_id: $p['clinic_id'],
+            professional_id: $p['professional_id'],
+            name: $p['name'],
+            role: $p['role'],
+            active: $p['active'] ?? true,
+            professional_user_id: $p['professional_user_id'] ?? null,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate ProfessionalUpdated event from outbox (FASE 21.0).
+     */
+    private function rehydrateProfessionalUpdated(EventOutbox $outboxEvent): \App\Events\Clinical\ProfessionalUpdated
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\ProfessionalUpdated(
+            clinic_id: $p['clinic_id'],
+            professional_id: $p['professional_id'],
+            name: $p['name'],
+            role: $p['role'],
+            active: $p['active'],
+            professional_user_id: $p['professional_user_id'] ?? null,
+            request_id: $outboxEvent->request_id,
+            user_id: $outboxEvent->user_id
+        );
+    }
+
+    /**
+     * Rehydrate ProfessionalDeactivated event from outbox (FASE 21.0).
+     */
+    private function rehydrateProfessionalDeactivated(EventOutbox $outboxEvent): \App\Events\Clinical\ProfessionalDeactivated
+    {
+        $p = $outboxEvent->payload;
+
+        return new \App\Events\Clinical\ProfessionalDeactivated(
+            clinic_id: $p['clinic_id'],
+            professional_id: $p['professional_id'],
             request_id: $outboxEvent->request_id,
             user_id: $outboxEvent->user_id
         );

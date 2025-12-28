@@ -18,7 +18,7 @@
         @endif
     </div>
 
-    {{-- Formulario de edición inline (oculto por defecto) --}}
+    {{-- Formulario de edición inline (oculto por defecto) - FASE 21.1: includes professional select --}}
     <form id="visit-edit-{{ $visit->id }}"
           style="display: none; flex: 1; gap: 0.25rem; align-items: center; flex-wrap: wrap;"
           hx-patch="{{ route('workspace.visits.update', ['visit' => $visit->id]) }}"
@@ -28,6 +28,20 @@
         <input type="datetime-local" name="occurred_at"
                value="{{ $visit->occurred_at->format('Y-m-d\TH:i') }}"
                style="padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 2px; font-size: 0.875rem;">
+        <select name="professional_id"
+                style="padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 2px; font-size: 0.875rem; background: white;">
+            <option value="">Sin asignar</option>
+            @foreach($professionals as $prof)
+                <option value="{{ $prof->id }}" {{ $visit->professional_id === $prof->id ? 'selected' : '' }}>
+                    {{ $prof->name }}
+                </option>
+            @endforeach
+            @if($visit->professional && !$visit->professional->active && !$professionals->contains('id', $visit->professional_id))
+                <option value="{{ $visit->professional_id }}" selected>
+                    {{ $visit->professional->name }} (inactivo)
+                </option>
+            @endif
+        </select>
         <input type="text" name="visit_type" value="{{ $visit->visit_type }}"
                style="width: 8rem; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 2px; font-size: 0.875rem;"
                placeholder="Tipo">

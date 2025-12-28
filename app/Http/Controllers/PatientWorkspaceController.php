@@ -70,6 +70,12 @@ class PatientWorkspaceController extends Controller
             ->alphabetical()
             ->get();
 
+        // FASE 21.0: Load active professionals for visit assignment
+        $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+            ->active()
+            ->alphabetical()
+            ->get();
+
         // FASE 17: Timeline técnico no se muestra en Workspace (código preservado)
         /*
         $timelinePage = $request->query('timeline_page', 1);
@@ -123,7 +129,8 @@ class PatientWorkspaceController extends Controller
                     'clinicalVisits',
                     'visitsMeta',
                     'patientId',
-                    'treatmentDefinitions' // FASE 20.5
+                    'treatmentDefinitions', // FASE 20.5
+                    'professionals' // FASE 21.0
                 ));
             }
         }
@@ -139,7 +146,8 @@ class PatientWorkspaceController extends Controller
             'timelineMeta',
             'billing',
             'billingMeta',
-            'treatmentDefinitions' // FASE 20.5
+            'treatmentDefinitions', // FASE 20.5
+            'professionals' // FASE 21.0
         ));
     }
 
@@ -164,12 +172,12 @@ class PatientWorkspaceController extends Controller
             abort(404, 'Patient not found');
         }
 
-        // Validate input
+        // Validate input (FASE 21.1: professional_id now references professionals table with UUID)
         $validated = $request->validate([
             'occurred_at' => 'required|date',
             'visit_type' => 'nullable|string|max:255',
             'summary' => 'nullable|string',
-            'professional_id' => 'nullable|integer|exists:users,id',
+            'professional_id' => 'nullable|uuid|exists:professionals,id',
         ]);
 
         try {
@@ -214,11 +222,18 @@ class PatientWorkspaceController extends Controller
                 ->alphabetical()
                 ->get();
 
+            // FASE 21.1: Load active professionals for visit assignment
+            $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+                ->active()
+                ->alphabetical()
+                ->get();
+
             return view('workspace.patient.partials._visits_content', compact(
                 'clinicalVisits',
                 'visitsMeta',
                 'patientId',
-                'treatmentDefinitions' // FASE 20.5
+                'treatmentDefinitions', // FASE 20.5
+                'professionals' // FASE 21.1
             ));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -373,12 +388,12 @@ class PatientWorkspaceController extends Controller
      */
     public function updateVisit(Request $request, string $visitId)
     {
-        // Validate input
+        // Validate input (FASE 21.1: professional_id now references professionals table with UUID)
         $validated = $request->validate([
             'occurred_at' => 'nullable|date',
             'visit_type' => 'nullable|string|max:255',
             'summary' => 'nullable|string',
-            'professional_id' => 'nullable|integer|exists:users,id',
+            'professional_id' => 'nullable|uuid|exists:professionals,id',
         ]);
 
         try {
@@ -425,11 +440,18 @@ class PatientWorkspaceController extends Controller
                 ->alphabetical()
                 ->get();
 
+            // FASE 21.1: Load active professionals for visit assignment
+            $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+                ->active()
+                ->alphabetical()
+                ->get();
+
             return view('workspace.patient.partials._visits_content', compact(
                 'clinicalVisits',
                 'visitsMeta',
                 'patientId',
-                'treatmentDefinitions' // FASE 20.5
+                'treatmentDefinitions', // FASE 20.5
+                'professionals' // FASE 21.1
             ));
         } catch (\DomainException $e) {
             return response()->json(['error' => $e->getMessage()], 422);

@@ -64,7 +64,9 @@
                     style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;"
                 >
                     <option value="">Sin asignar</option>
-                    {{-- En fase futura: listar profesionales reales --}}
+                    @foreach($professionals as $prof)
+                        <option value="{{ $prof->id }}">{{ $prof->name }}</option>
+                    @endforeach
                 </select>
             </div>
 
