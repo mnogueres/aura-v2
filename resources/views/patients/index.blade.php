@@ -3,21 +3,47 @@
 @section('header', 'Pacientes')
 
 @section('content')
+
+<div class="aura-workspace-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
+        Gestiona los pacientes de tu clínica
+    </p>
+
+    <button
+        onclick="alert('Funcionalidad próximamente disponible')"
+        style="
+            padding: 0.5rem 1rem;
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        "
+        onmouseover="this.style.background='#0284c7'"
+        onmouseout="this.style.background='#0ea5e9'"
+    >
+        + Nuevo paciente
+    </button>
+</div>
+
 <div x-data="{
         search: '',
         patients: {{ json_encode($patients) }},
         get filteredPatients() {
             if (this.search === '') return this.patients;
-            
+
             const query = this.search.toLowerCase();
-            return this.patients.filter(patient => 
+            return this.patients.filter(patient =>
                 patient.name.toLowerCase().includes(query) ||
                 patient.dni.toLowerCase().includes(query)
             );
         }
     }">
     <!-- Buscador -->
-    <div class="aura-search">
+    <div class="aura-search" style="margin-bottom: 1.5rem;">
         <input
             type="text"
             class="aura-search-input"
@@ -41,7 +67,7 @@
                     <span class="aura-patient-dni" x-text="patient.dni"></span>
                 </div>
                 <span
-                    class="aura-patient-status"
+                    class="aura-status-badge"
                     :class="patient.status === 'Activo' ? 'active' : 'inactive'"
                     x-text="patient.status"></span>
             </a>

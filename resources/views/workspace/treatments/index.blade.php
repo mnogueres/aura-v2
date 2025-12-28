@@ -3,11 +3,10 @@
 @section('header', 'Tratamientos')
 
 @section('content')
-{{-- FASE 20.7: Treatment Catalog Workspace --}}
 
 <div class="aura-workspace-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
     <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
-        Gestiona el catálogo de tratamientos de tu clínica
+        Gestiona los tratamientos de tu clínica
     </p>
 
     <button
@@ -30,37 +29,80 @@
     </button>
 </div>
 
-{{-- Dynamic Search (HTMX) --}}
-<div style="margin-bottom: 1.5rem;">
-    <input
-        type="text"
-        name="search"
-        placeholder="Buscar tratamiento…"
-        autocomplete="off"
-        hx-get="{{ route('workspace.treatments.index') }}"
-        hx-trigger="keyup changed delay:300ms"
-        hx-target="#treatments-list"
-        hx-push-url="false"
-        hx-include="[name='search']"
-        style="
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        "
-        onfocus="this.style.borderColor='#0ea5e9'; this.style.boxShadow='0 0 0 3px rgba(14, 165, 233, 0.1)';"
-        onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"
-    >
+<div x-data="{
+        search: '',
+        treatments: {{ json_encode($treatments->map(function($t) {
+            return [
+                'id' => $t->id,
+                'name' => $t->name,
+                'default_price' => $t->default_price,
+                'active' => $t->active,
+                'status' => $t->active ? 'Activo' : 'Inactivo',
+                'price_label' => $t->default_price ? 'Precio ref: ' . number_format($t->default_price, 2) . '€' : 'Sin precio de referencia',
+            ];
+        })->values()) }},
+        get filteredTreatments() {
+            if (this.search === '') return this.treatments;
+
+            const query = this.search.toLowerCase();
+            return this.treatments.filter(treatment =>
+                treatment.name.toLowerCase().includes(query)
+            );
+        }
+    }">
+    <!-- Buscador -->
+    <div class="aura-search" style="margin-bottom: 1.5rem;">
+        <input
+            type="text"
+            class="aura-search-input"
+            placeholder="Buscar por nombre..."
+            x-model="search"
+            autocomplete="off">
+    </div>
+
+    <!-- Listado -->
+    <div class="aura-patient-list">
+        <template x-for="treatment in filteredTreatments" :key="treatment.id">
+            <div
+                class="aura-patient-item"
+                x-show="true"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 transform scale-95"
+                x-transition:enter-end="opacity-100 transform scale-100"
+                style="cursor: default;">
+                <div class="aura-patient-main">
+                    <h3 class="aura-patient-name" x-text="treatment.name"></h3>
+                    <span class="aura-patient-dni" x-text="treatment.price_label"></span>
+                </div>
+                <span
+                    class="aura-status-badge"
+                    :class="treatment.status === 'Activo' ? 'active' : 'inactive'"
+                    x-text="treatment.status"></span>
+            </div>
+        </template>
+    </div>
 </div>
 
-{{-- Treatments List (HTMX swap target) --}}
-<div id="treatments-list">
-    @include('workspace.treatments.partials._treatments_list', ['treatments' => $treatments])
+<!-- Status bar FUERA de la cápsula -->
+<div class="aura-statusbar">
+    <div class="aura-pagination">
+        <a href="#" class="aura-pagination-btn disabled">
+            Anterior
+        </a>
+
+        <div class="aura-pagination-pages">
+            <a href="#" class="aura-pagination-page active">
+                1
+            </a>
+        </div>
+
+        <a href="#" class="aura-pagination-btn disabled">
+            Siguiente
+        </a>
+    </div>
 </div>
 
-{{-- New Treatment Modal (BLOQUE 3) --}}
+{{-- New Treatment Modal --}}
 @include('workspace.treatments.partials._new_treatment_modal')
 
 @endsection

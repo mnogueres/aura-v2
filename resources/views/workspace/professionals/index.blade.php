@@ -3,11 +3,10 @@
 @section('header', 'Profesionales')
 
 @section('content')
-{{-- FASE 21.0/21.1: Professional Catalog Workspace with Dynamic Search --}}
 
 <div class="aura-workspace-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
     <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
-        Gestiona el catálogo de profesionales de tu clínica
+        Gestiona los profesionales de tu clínica
     </p>
 
     <button
@@ -38,7 +37,7 @@
                 'name' => $p->name,
                 'role' => $p->role,
                 'active' => $p->active,
-                'user_id' => $p->user_id,
+                'status' => $p->active ? 'Activo' : 'Inactivo',
             ];
         })->values()) }},
         get filteredProfessionals() {
@@ -60,8 +59,7 @@
             return labels[role] || role;
         }
     }">
-
-    {{-- Search Input (FASE 21.1 - BLOQUE 3) --}}
+    <!-- Buscador -->
     <div class="aura-search" style="margin-bottom: 1.5rem;">
         <input
             type="text"
@@ -71,9 +69,45 @@
             autocomplete="off">
     </div>
 
-    {{-- Professionals List (HTMX swap target) --}}
-    <div id="professionals-list">
-        @include('workspace.professionals.partials._professionals_list', ['professionals' => $professionals])
+    <!-- Listado -->
+    <div class="aura-patient-list">
+        <template x-for="professional in filteredProfessionals" :key="professional.id">
+            <div
+                class="aura-patient-item"
+                x-show="true"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 transform scale-95"
+                x-transition:enter-end="opacity-100 transform scale-100"
+                style="cursor: default;">
+                <div class="aura-patient-main">
+                    <h3 class="aura-patient-name" x-text="professional.name"></h3>
+                    <span class="aura-patient-dni" x-text="getRoleLabel(professional.role)"></span>
+                </div>
+                <span
+                    class="aura-status-badge"
+                    :class="professional.status === 'Activo' ? 'active' : 'inactive'"
+                    x-text="professional.status"></span>
+            </div>
+        </template>
+    </div>
+</div>
+
+<!-- Status bar FUERA de la cápsula -->
+<div class="aura-statusbar">
+    <div class="aura-pagination">
+        <a href="#" class="aura-pagination-btn disabled">
+            Anterior
+        </a>
+
+        <div class="aura-pagination-pages">
+            <a href="#" class="aura-pagination-page active">
+                1
+            </a>
+        </div>
+
+        <a href="#" class="aura-pagination-btn disabled">
+            Siguiente
+        </a>
     </div>
 </div>
 

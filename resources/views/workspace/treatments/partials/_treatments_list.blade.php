@@ -142,17 +142,7 @@
 
                 {{-- Status Badge --}}
                 <div>
-                    <span style="
-                        display: inline-flex;
-                        padding: 0.25rem 0.625rem;
-                        font-size: 0.75rem;
-                        font-weight: 500;
-                        border-radius: 12px;
-                        {{ $treatment->active
-                            ? 'background: #dcfce7; color: #166534;'
-                            : 'background: #f1f5f9; color: #64748b;'
-                        }}
-                    ">
+                    <span class="aura-status-badge {{ $treatment->active ? 'active' : 'inactive' }}">
                         {{ $treatment->active ? 'Activo' : 'Inactivo' }}
                     </span>
                 </div>

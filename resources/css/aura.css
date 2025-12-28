@@ -319,6 +319,31 @@ body {
   color: #94A3B8;
 }
 
+/* ============================================================
+   STATUS BADGES (CANONICAL - Used across all catalog pages)
+   ============================================================ */
+
+.aura-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 12px;
+  transition: all var(--aura-duration) var(--aura-ease);
+}
+
+.aura-status-badge.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.aura-status-badge.inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* Legacy patient status (deprecated - use aura-status-badge instead) */
 .aura-patient-status {
   font-size: var(--aura-text-sm);
   font-weight: var(--aura-font-medium);
