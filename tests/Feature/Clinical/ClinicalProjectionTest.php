@@ -40,19 +40,28 @@ class ClinicalProjectionTest extends TestCase
     /** @test */
     public function it_projects_a_visit_when_visit_recorded_event_is_emitted()
     {
+        // Create a professional first (FASE 21)
+        $professional = \App\Models\Professional::create([
+            'id' => (string) Str::uuid(),
+            'clinic_id' => $this->clinic->id,
+            'name' => 'Dr. García',
+            'role' => 'dentist',
+            'active' => true,
+        ]);
+
         $visitId = (string) Str::uuid();
         $occurredAt = now()->toISOString();
 
         $event = new VisitRecorded(
+            clinic_id: $this->clinic->id,
             visit_id: $visitId,
             patient_id: $this->patient->id,
+            professional_id: $professional->id,  // UUID, not name
             occurred_at: $occurredAt,
-            professional_name: 'Dr. García',
             visit_type: 'Primera visita',
             summary: 'Paciente refiere dolor en molar',
             request_id: (string) Str::uuid(),
-            user_id: 1,
-            clinic_id: $this->clinic->id
+            user_id: 1
         );
 
         event($event);
@@ -61,7 +70,7 @@ class ClinicalProjectionTest extends TestCase
             'id' => $visitId,
             'clinic_id' => $this->clinic->id,
             'patient_id' => $this->patient->id,
-            'professional_name' => 'Dr. García',
+            'professional_id' => $professional->id,
             'visit_type' => 'Primera visita',
             'summary' => 'Paciente refiere dolor en molar',
         ]);
@@ -70,6 +79,15 @@ class ClinicalProjectionTest extends TestCase
     /** @test */
     public function it_projects_a_treatment_when_treatment_recorded_event_is_emitted()
     {
+        // Create professional (FASE 21)
+        $professional = \App\Models\Professional::create([
+            'id' => (string) Str::uuid(),
+            'clinic_id' => $this->clinic->id,
+            'name' => 'Dr. García',
+            'role' => 'dentist',
+            'active' => true,
+        ]);
+
         // First create a visit
         $visitId = (string) Str::uuid();
         ClinicalVisit::create([
@@ -77,7 +95,7 @@ class ClinicalProjectionTest extends TestCase
             'clinic_id' => $this->clinic->id,
             'patient_id' => $this->patient->id,
             'occurred_at' => now(),
-            'professional_name' => 'Dr. García',
+            'professional_id' => $professional->id,
             'treatments_count' => 0,
             'projected_at' => now(),
         ]);
@@ -122,6 +140,16 @@ class ClinicalProjectionTest extends TestCase
             'name' => 'Other Clinic',
             'email' => 'other@clinic.com',
         ]);
+
+        // Create professional for other clinic
+        $otherProfessional = \App\Models\Professional::create([
+            'id' => (string) Str::uuid(),
+            'clinic_id' => $otherClinic->id,
+            'name' => 'Dr. Otro',
+            'role' => 'dentist',
+            'active' => true,
+        ]);
+
         $visitId = (string) Str::uuid();
 
         ClinicalVisit::create([
@@ -129,7 +157,7 @@ class ClinicalProjectionTest extends TestCase
             'clinic_id' => $otherClinic->id,
             'patient_id' => 999,
             'occurred_at' => now(),
-            'professional_name' => 'Dr. Otro',
+            'professional_id' => $otherProfessional->id,
             'treatments_count' => 0,
             'projected_at' => now(),
         ]);
@@ -143,6 +171,15 @@ class ClinicalProjectionTest extends TestCase
     /** @test */
     public function it_loads_treatments_for_a_visit()
     {
+        // Create professional
+        $professional = \App\Models\Professional::create([
+            'id' => (string) Str::uuid(),
+            'clinic_id' => $this->clinic->id,
+            'name' => 'Dr. García',
+            'role' => 'dentist',
+            'active' => true,
+        ]);
+
         $visitId = (string) Str::uuid();
 
         ClinicalVisit::create([
@@ -150,7 +187,7 @@ class ClinicalProjectionTest extends TestCase
             'clinic_id' => $this->clinic->id,
             'patient_id' => $this->patient->id,
             'occurred_at' => now(),
-            'professional_name' => 'Dr. García',
+            'professional_id' => $professional->id,
             'treatments_count' => 2,
             'projected_at' => now(),
         ]);
@@ -163,6 +200,7 @@ class ClinicalProjectionTest extends TestCase
             'type' => 'Empaste',
             'tooth' => '16',
             'projected_at' => now(),
+            'created_at' => now(),
         ]);
 
         ClinicalTreatment::create([
@@ -172,6 +210,7 @@ class ClinicalProjectionTest extends TestCase
             'visit_id' => $visitId,
             'type' => 'Limpieza',
             'projected_at' => now(),
+            'created_at' => now(),
         ]);
 
         $repository = app(\App\Repositories\ClinicalTreatmentRepository::class);
@@ -184,6 +223,15 @@ class ClinicalProjectionTest extends TestCase
     public function it_does_not_show_technical_events_in_workspace()
     {
         // This test verifies that the workspace shows clinical language, not technical events
+        // Create professional
+        $professional = \App\Models\Professional::create([
+            'id' => (string) Str::uuid(),
+            'clinic_id' => $this->clinic->id,
+            'name' => 'Dr. García',
+            'role' => 'dentist',
+            'active' => true,
+        ]);
+
         $visitId = (string) Str::uuid();
 
         $visit = ClinicalVisit::create([
@@ -191,14 +239,14 @@ class ClinicalProjectionTest extends TestCase
             'clinic_id' => $this->clinic->id,
             'patient_id' => $this->patient->id,
             'occurred_at' => now(),
-            'professional_name' => 'Dr. García',
+            'professional_id' => $professional->id,
             'summary' => 'Visita de revisión',
             'treatments_count' => 0,
             'projected_at' => now(),
         ]);
 
         // The visit should have human-readable fields, not technical event names
-        $this->assertNotEmpty($visit->professional_name);
+        $this->assertNotEmpty($visit->professional_id);
         $this->assertNotContains('clinical.visit.recorded', $visit->toArray());
         $this->assertNotContains('event_name', array_keys($visit->toArray()));
     }

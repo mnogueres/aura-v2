@@ -85,6 +85,7 @@ class AppServiceProvider extends ServiceProvider
         $auditTrailProjector = app(\App\Projections\AuditTrailProjector::class);
         $clinicalVisitProjector = app(\App\Projections\ClinicalVisitProjector::class);
         $clinicalTreatmentProjector = app(\App\Projections\ClinicalTreatmentProjector::class);
+        $clinicalProfessionalProjector = app(\App\Projections\ClinicalProfessionalProjector::class);
 
         // Patient Timeline Projection
         Event::listen(\App\Events\CRM\PatientCreated::class, [$timelineProjector, 'handlePatientCreated']);
@@ -119,5 +120,10 @@ class AppServiceProvider extends ServiceProvider
         // Clinical Projections
         Event::listen(\App\Events\Clinical\VisitRecorded::class, [$clinicalVisitProjector, 'handleVisitRecorded']);
         Event::listen(\App\Events\Clinical\TreatmentRecorded::class, [$clinicalTreatmentProjector, 'handleTreatmentRecorded']);
+
+        // Professional Projections (FASE 21.0)
+        Event::listen(\App\Events\Clinical\ProfessionalCreated::class, [$clinicalProfessionalProjector, 'handleProfessionalCreated']);
+        Event::listen(\App\Events\Clinical\ProfessionalUpdated::class, [$clinicalProfessionalProjector, 'handleProfessionalUpdated']);
+        Event::listen(\App\Events\Clinical\ProfessionalDeactivated::class, [$clinicalProfessionalProjector, 'handleProfessionalDeactivated']);
     }
 }

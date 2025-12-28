@@ -36,6 +36,9 @@ class Professional extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new ClinicScope);
+
+        // Auto-emit domain events for CQRS
+        static::observe(\App\Observers\ProfessionalObserver::class);
     }
 
     /**
