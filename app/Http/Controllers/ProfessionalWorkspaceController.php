@@ -33,8 +33,10 @@ class ProfessionalWorkspaceController extends Controller
             ? app('currentClinicId')
             : \App\Models\Clinic::latest()->first()?->id ?? 1;
 
-        // Fetch all professionals (active and inactive) for catalog management
-        $professionals = $this->repository->getAllProfessionals($clinicId);
+        // Fetch all professionals (active and inactive) with canonical pagination (8 per page)
+        $professionals = \App\Models\ClinicalProfessional::forClinic($clinicId)
+            ->alphabetical()
+            ->paginate(8);
 
         return view('workspace.professionals.index', [
             'professionals' => $professionals,

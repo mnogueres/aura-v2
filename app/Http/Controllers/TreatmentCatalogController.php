@@ -52,8 +52,8 @@ class TreatmentCatalogController extends Controller
             $query->where('name', 'LIKE', '%' . $searchTerm . '%');
         }
 
-        // Fetch treatment definitions (read model) - alphabetically ordered
-        $treatments = $query->alphabetical()->get();
+        // Fetch treatment definitions (read model) - alphabetically ordered with canonical pagination (8 per page)
+        $treatments = $query->alphabetical()->paginate(8);
 
         // Calculate usage count for each treatment (for conditional delete button)
         $treatments->each(function ($treatment) {

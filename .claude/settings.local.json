@@ -7,7 +7,8 @@
       "Bash(php artisan migrate:*)",
       "Bash(git commit:*)",
       "Bash(tee:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

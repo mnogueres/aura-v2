@@ -95,17 +95,25 @@
 <!-- Status bar FUERA de la cápsula -->
 <div class="aura-statusbar">
     <div class="aura-pagination">
-        <a href="#" class="aura-pagination-btn disabled">
+        <a
+            href="{{ $professionals->previousPageUrl() ?? '#' }}"
+            class="aura-pagination-btn {{ $professionals->onFirstPage() ? 'disabled' : '' }}">
             Anterior
         </a>
 
         <div class="aura-pagination-pages">
-            <a href="#" class="aura-pagination-page active">
-                1
-            </a>
+            @for ($i = 1; $i <= $professionals->lastPage(); $i++)
+                <a
+                href="{{ $professionals->url($i) }}"
+                class="aura-pagination-page {{ $i === $professionals->currentPage() ? 'active' : '' }}">
+                {{ $i }}
+                </a>
+            @endfor
         </div>
 
-        <a href="#" class="aura-pagination-btn disabled">
+        <a
+            href="{{ $professionals->nextPageUrl() ?? '#' }}"
+            class="aura-pagination-btn {{ !$professionals->hasMorePages() ? 'disabled' : '' }}">
             Siguiente
         </a>
     </div>
